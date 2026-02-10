@@ -47,7 +47,9 @@
   padding: var(--space-sm) var(--space-md);
   cursor: pointer;
   border-left: 2px solid transparent;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .item:hover {
@@ -102,7 +104,9 @@
   font-size: var(--text-xs);
   padding: 0 var(--space-xs);
   opacity: 0;
-  transition: opacity var(--transition-fast), color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .item:hover .deleteBtn {
