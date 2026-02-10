@@ -21,6 +21,7 @@ import { StoryBiblePanel } from './Write/StoryBiblePanel';
 import { ChapterForm } from './Write/ChapterForm';
 import { EditorPanel } from './Write/EditorPanel';
 import { AISidebar } from './Write/AISidebar';
+import { AcceptPreviewModal } from './Write/AcceptPreviewModal';
 import styles from './Write.module.css';
 
 const LEFT_TABS: Tab[] = [
@@ -32,25 +33,44 @@ export function Write(): React.ReactElement {
   const selectedId = useSelectedChapterId();
   const aiPanelOpen = useAIPanelOpen();
   const leftPanelTab = useLeftPanelTab();
-  const { setLeftPanelTab } = useEditorActions();
+  const { setLeftPanelTab, clearAIState } = useEditorActions();
 
   // For accept: append AI text to chapter content
   const { data: chapter } = useChapterWithContent(selectedId);
   const saveMutation = useSaveContent();
 
+  // Accept preview state
+  const [showAcceptPreview, setShowAcceptPreview] = React.useState(false);
+  const [pendingAIText, setPendingAIText] = React.useState('');
+
   const handleAIAccept = React.useCallback(
     (text: string) => {
       if (selectedId == null) return;
-      const currentContent = chapter?.content ?? '';
-      const newContent = currentContent + (currentContent ? '\n\n' : '') + text;
+      setPendingAIText(text);
+      setShowAcceptPreview(true);
+    },
+    [selectedId]
+  );
+
+  const handlePreviewConfirm = React.useCallback(
+    (mergedContent: string) => {
+      if (selectedId == null) return;
       saveMutation.mutate({
         chapterId: selectedId,
-        content: newContent,
+        content: mergedContent,
         createVersion: false,
       });
+      setShowAcceptPreview(false);
+      setPendingAIText('');
+      clearAIState();
     },
-    [selectedId, chapter?.content, saveMutation]
+    [selectedId, saveMutation, clearAIState]
   );
+
+  const handlePreviewCancel = React.useCallback(() => {
+    setShowAcceptPreview(false);
+    setPendingAIText('');
+  }, []);
 
   return (
     <div className={styles.writePage}>
@@ -78,6 +98,14 @@ export function Write(): React.ReactElement {
       )}
 
       <ChapterForm />
+
+      <AcceptPreviewModal
+        isOpen={showAcceptPreview}
+        currentContent={chapter?.content ?? ''}
+        newText={pendingAIText}
+        onConfirm={handlePreviewConfirm}
+        onCancel={handlePreviewCancel}
+      />
     </div>
   );
 }

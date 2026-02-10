@@ -30,14 +30,8 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
   const selectedId = useSelectedChapterId();
   const isLoading = useAILoading();
   const aiResponse = useAIResponse();
-  const {
-    setAILoading,
-    setAIResponse,
-    appendAIContent,
-    addRejectHistory,
-    clearAIState,
-    setBuiltContext,
-  } = useEditorActions();
+  const { setAILoading, setAIResponse, appendAIContent, addRejectHistory, setBuiltContext } =
+    useEditorActions();
 
   const { data: contextData } = useBuildContext(selectedId);
   const [promptText, setPromptText] = React.useState('');
@@ -101,7 +95,7 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
   const handleAccept = () => {
     if (aiResponse) {
       onAccept(aiResponse);
-      clearAIState();
+      // clearAIState() is called by Write.tsx after preview confirmation
     }
   };
 
