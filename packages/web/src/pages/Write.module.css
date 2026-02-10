@@ -37,4 +37,6 @@
   border-left: 1px solid var(--color-border);
   background: var(--color-bg);
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
