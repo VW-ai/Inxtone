@@ -60,7 +60,7 @@ export function Settings(): React.ReactElement {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Settings</h1>
-        <p className={styles.description}>Manage your API key and demo data.</p>
+        <p className={styles.subtitle}>Manage your API key and demo data.</p>
       </header>
 
       <section className={styles.section}>
@@ -68,19 +68,8 @@ export function Settings(): React.ReactElement {
         <div className={styles.card}>
           <h3>Gemini API Key</h3>
           {apiKey ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-md)',
-                flexWrap: 'wrap',
-              }}
-            >
-              <code
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)' }}
-              >
-                {maskKey(apiKey)}
-              </code>
+            <div className={styles.inlineRow}>
+              <code className={styles.maskedKey}>{maskKey(apiKey)}</code>
               <Button variant="secondary" size="sm" onClick={openDialog}>
                 Change
               </Button>
@@ -90,9 +79,7 @@ export function Settings(): React.ReactElement {
             </div>
           ) : (
             <div>
-              <p style={{ marginBottom: 'var(--space-md)' }}>
-                No API key configured. AI features are disabled.
-              </p>
+              <p>No API key configured. AI features are disabled.</p>
               <Button variant="primary" size="sm" onClick={openDialog}>
                 Set API Key
               </Button>
@@ -103,10 +90,8 @@ export function Settings(): React.ReactElement {
         {/* Seed Data */}
         <div className={styles.card}>
           <h3>Demo Data</h3>
-          <p style={{ marginBottom: 'var(--space-md)' }}>
-            Load a demo story to explore all features, or clear existing data.
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+          <p>Load a demo story to explore all features, or clear existing data.</p>
+          <div className={styles.buttonRow}>
             <Button
               variant="secondary"
               size="sm"
@@ -137,11 +122,7 @@ export function Settings(): React.ReactElement {
           </div>
           {seedMessage && (
             <p
-              style={{
-                marginTop: 'var(--space-sm)',
-                fontSize: 'var(--text-xs)',
-                color: seedMessage.startsWith('Error') ? '#ef4444' : '#22c55e',
-              }}
+              className={`${styles.feedbackMessage} ${seedMessage.startsWith('Error') ? styles.feedbackError : styles.feedbackSuccess}`}
             >
               {seedMessage}
             </p>

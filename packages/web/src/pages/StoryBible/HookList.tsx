@@ -7,7 +7,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, EmptyState, Badge, EditableField } from '../../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  Badge,
+  EditableField,
+  LoadingSpinner,
+} from '../../components/ui';
 import { useHooks, useCreateHook, useDeleteHook } from '../../hooks';
 import { useSelectedId, useFormMode, useStoryBibleActions } from '../../stores/useStoryBibleStore';
 import { HookDetail } from './HookDetail';
@@ -202,12 +209,7 @@ export function HookList(): React.ReactElement {
   const navigate = useNavigate();
 
   if (isLoading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <span>Loading hooks...</span>
-      </div>
-    );
+    return <LoadingSpinner text="Loading hooks..." />;
   }
 
   const handleCreate = () => {

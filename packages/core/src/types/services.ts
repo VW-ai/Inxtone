@@ -159,6 +159,12 @@ export interface CreateTimelineEventInput {
   relatedLocations?: LocationId[];
 }
 
+/** Options for updating a timeline event */
+export interface UpdateTimelineEventInput {
+  eventDate?: string;
+  description?: string;
+}
+
 /** Options for creating foreshadowing */
 export interface CreateForeshadowingInput {
   content: string;
@@ -166,6 +172,11 @@ export interface CreateForeshadowingInput {
   plantedText?: string;
   plannedPayoff?: ChapterId;
   term?: 'short' | 'mid' | 'long';
+}
+
+/** Options for updating foreshadowing */
+export interface UpdateForeshadowingInput extends Partial<CreateForeshadowingInput> {
+  status?: 'active' | 'resolved' | 'abandoned';
 }
 
 /** Options for creating an arc */
@@ -239,6 +250,7 @@ export interface IStoryBibleService {
   // === Timeline ===
   createTimelineEvent(input: CreateTimelineEventInput): Promise<TimelineEvent>;
   getTimelineEvents(): Promise<TimelineEvent[]>;
+  updateTimelineEvent(id: number, input: UpdateTimelineEventInput): Promise<TimelineEvent>;
   deleteTimelineEvent(id: number): Promise<void>;
 
   // === Arcs ===
@@ -253,6 +265,7 @@ export interface IStoryBibleService {
   getForeshadowing(id: ForeshadowingId): Promise<Foreshadowing | null>;
   getAllForeshadowing(): Promise<Foreshadowing[]>;
   getActiveForeshadowing(): Promise<Foreshadowing[]>;
+  updateForeshadowing(id: ForeshadowingId, input: UpdateForeshadowingInput): Promise<Foreshadowing>;
   addForeshadowingHint(
     id: ForeshadowingId,
     chapter: ChapterId,
@@ -260,6 +273,7 @@ export interface IStoryBibleService {
   ): Promise<Foreshadowing>;
   resolveForeshadowing(id: ForeshadowingId, resolvedChapter: ChapterId): Promise<Foreshadowing>;
   abandonForeshadowing(id: ForeshadowingId): Promise<Foreshadowing>;
+  deleteForeshadowing(id: ForeshadowingId): Promise<void>;
 
   // === Hooks ===
   createHook(input: CreateHookInput): Promise<Hook>;
@@ -566,6 +580,34 @@ export interface IAIService {
    * Get token count for text
    */
   countTokens(text: string, provider?: AIProvider): number;
+
+  // === Entity Extraction ===
+  /**
+   * Extract entities (characters, locations) from AI-generated content.
+   * Non-streaming — returns structured JSON.
+   */
+  extractEntities(
+    chapterId: ChapterId,
+    content: string,
+    options?: AIGenerationOptions
+  ): Promise<ExtractedEntities>;
+}
+
+// ===========================================
+// Entity Extraction Types
+// ===========================================
+
+/** A single entity extracted from content */
+export interface ExtractedEntity {
+  name: string;
+  existingId: string | null; // matched against Bible, null if new
+  isNew: boolean;
+}
+
+/** Result of entity extraction */
+export interface ExtractedEntities {
+  characters: ExtractedEntity[];
+  locations: ExtractedEntity[];
 }
 
 // ===========================================
@@ -762,81 +804,60 @@ export interface ISearchService {
 }
 
 // ===========================================
-// ExportService
+// ExportService (simplified per ADR-0005)
 // ===========================================
 
-/** Export format */
-export type ExportFormat = 'md' | 'txt' | 'docx' | 'pdf';
+/** Export format (PDF deferred — see GitHub #10) */
+export type ExportFormat = 'md' | 'txt' | 'docx';
 
 /** Export range */
 export interface ExportRange {
   type: 'all' | 'volume' | 'chapters';
   volumeId?: VolumeId;
-  chapterStart?: ChapterId;
-  chapterEnd?: ChapterId;
+  chapterIds?: ChapterId[];
 }
 
 /** Export options */
 export interface ExportOptions {
   format: ExportFormat;
   range: ExportRange;
-  template?: string;
   includeOutline?: boolean;
   includeMetadata?: boolean;
-  outputPath: string;
 }
 
-/** Export progress */
-export interface ExportProgress {
-  current: number;
-  total: number;
-  currentItem: string;
+/** Story Bible export options */
+export interface BibleExportOptions {
+  sections?: Array<
+    | 'characters'
+    | 'relationships'
+    | 'world'
+    | 'locations'
+    | 'factions'
+    | 'arcs'
+    | 'foreshadowing'
+    | 'hooks'
+  >;
+}
+
+/** Export result — returned by all export methods */
+export interface ExportResult {
+  data: Buffer | string;
+  filename: string;
+  mimeType: string;
 }
 
 /**
- * ExportService - Multi-format export
+ * ExportService - Multi-format export (simplified per ADR-0005)
+ *
+ * Template system → GitHub #11
+ * Pre-export checks → GitHub #12 (depends on QualityService, M7)
  */
 export interface IExportService {
-  // === Export ===
-  /**
-   * Export chapters
-   */
-  exportChapters(options: ExportOptions): Promise<string>;
+  /** Export chapters in specified format */
+  exportChapters(options: ExportOptions): Promise<ExportResult>;
 
-  /**
-   * Export story bible
-   */
-  exportStoryBible(format: ExportFormat, outputPath: string): Promise<string>;
-
-  /**
-   * Export with progress callback
-   */
-  exportWithProgress(
-    options: ExportOptions,
-    onProgress: (progress: ExportProgress) => void
-  ): Promise<string>;
-
-  // === Templates ===
-  /**
-   * Get available export templates
-   */
-  getTemplates(): Promise<Array<{ id: string; name: string; description: string }>>;
-
-  /**
-   * Preview export with template
-   */
-  previewTemplate(templateId: string, chapterId: ChapterId): Promise<string>;
-
-  // === Pre-export Checks ===
-  /**
-   * Run pre-export checks
-   */
-  runPreExportChecks(range: ExportRange): Promise<{
-    hasErrors: boolean;
-    issues: Issue[];
-    unresolvedForeshadowing: Foreshadowing[];
-    incompleteChapters: Chapter[];
-  }>;
+  /** Export Story Bible as structured Markdown */
+  exportStoryBible(options?: BibleExportOptions): Promise<ExportResult>;
 }
 
 // ===========================================

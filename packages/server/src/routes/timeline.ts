@@ -2,11 +2,11 @@
  * Timeline API Routes
  *
  * RESTful endpoints for timeline event management.
- * 3 endpoints: list, create, delete.
+ * 4 endpoints: list, create, update, delete.
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { TimelineEvent } from '@inxtone/core';
+import type { TimelineEvent, UpdateTimelineEventInput } from '@inxtone/core';
 import type { RouteDeps } from './index.js';
 import { success } from '../utils/response.js';
 
@@ -34,6 +34,18 @@ export const timelineRoutes = (deps: RouteDeps): FastifyPluginAsync => {
     }>('/', async (request, reply) => {
       const event = await storyBibleService.createTimelineEvent(request.body);
       return reply.status(201).send(success(event));
+    });
+
+    /**
+     * PATCH /:id - Update a timeline event
+     */
+    fastify.patch<{
+      Params: { id: string };
+      Body: UpdateTimelineEventInput;
+    }>('/:id', async (request) => {
+      const id = parseInt(request.params.id, 10);
+      const event = await storyBibleService.updateTimelineEvent(id, request.body);
+      return success(event);
     });
 
     /**

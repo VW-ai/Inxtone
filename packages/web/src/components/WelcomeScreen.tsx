@@ -77,7 +77,7 @@ export function WelcomeScreen(): React.ReactElement {
       </div>
 
       {error && (
-        <p className={styles.hint} style={{ color: '#ef4444' }}>
+        <p className={styles.hint} style={{ color: 'var(--color-danger)' }}>
           {error}
         </p>
       )}

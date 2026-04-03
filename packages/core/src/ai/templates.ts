@@ -106,12 +106,12 @@ You are a fiction writing consultant. Brainstorm based on the current story stat
 
 {{user_instruction}}
 
-Provide 3-5 possible directions or creative ideas. Each direction should include:
-1. A short title
-2. Core concept (2-3 sentences)
-3. How it connects to the current plot
+Provide 3-5 possible directions. Use EXACTLY this format:
 
-List each direction in a clear format.`;
+1. **Title**: Core concept in 2-3 sentences. How it connects to the current plot.
+2. **Title**: Core concept in 2-3 sentences. How it connects to the current plot.
+
+Keep each direction to 2-4 sentences. Use bold **Title** followed by a colon.`;
 
 export const ASK_BIBLE_TEMPLATE = `---
 name: ask_bible
@@ -129,3 +129,49 @@ You are a story setting consultant. Answer questions based on the following stor
 {{question}}
 
 Answer based on the provided story materials. If the information is not available, clearly state so.`;
+
+export const ENTITY_EXTRACTION_TEMPLATE = `---
+name: extract_entities
+description: Extract characters and locations from written content
+variables:
+  - context
+  - content
+  - known_characters
+  - known_locations
+---
+
+You are an entity extraction assistant for a fiction writing tool.
+
+Given the following story bible context and a piece of newly written content, identify all characters and locations mentioned.
+
+{{context}}
+
+## Known Characters
+{{known_characters}}
+
+## Known Locations
+{{known_locations}}
+
+## Content to Analyze
+{{content}}
+
+For each entity found, determine:
+1. Whether it matches a known entity from the story bible (use the exact ID)
+2. Whether it is a new entity not yet in the bible
+
+Return a JSON object with this exact structure:
+{
+  "characters": [
+    { "name": "Character Name", "existingId": "C001_or_null", "isNew": false }
+  ],
+  "locations": [
+    { "name": "Location Name", "existingId": "L001_or_null", "isNew": false }
+  ]
+}
+
+Rules:
+- Only include entities that are clearly named (not pronouns or generic references)
+- Match existing entities by name similarity
+- Set existingId to the known ID if matched, null if new
+- Set isNew to true only if the entity has no match in the known lists
+- Return empty arrays if no entities are found`;

@@ -2,24 +2,31 @@
  * AISidebar — AI panel orchestrator
  *
  * Quick actions (Continue, Brainstorm), prompt input, streaming response,
- * accept/reject/regenerate action bar.
+ * accept/reject/regenerate action bar, iterative brainstorm direction explorer.
  */
 
 import React from 'react';
 import { Button } from '../../components/ui';
+import { Icon } from '../../components/Icon';
 import { Textarea } from '../../components/forms';
 import {
   useSelectedChapterId,
   useAILoading,
   useAIResponse,
   useExcludedContextIds,
+  useInjectedEntities,
   useEditorActions,
   useEditorStore,
+  useBrainstormStack,
 } from '../../stores/useEditorStore';
 import { useBuildContext } from '../../hooks';
 import { streamAI } from '../../lib/aiStream';
+import { parseBrainstorm } from '../../lib/parseBrainstorm';
+import type { BrainstormSuggestion } from '../../lib/parseBrainstorm';
 import { ContextPreview } from './ContextPreview';
+import { PromptPresets } from './PromptPresets';
 import { StreamingResponse } from './StreamingResponse';
+import { BrainstormPanel } from './BrainstormPanel';
 import { RejectReasonModal } from './RejectReasonModal';
 import styles from './AISidebar.module.css';
 
@@ -32,16 +39,34 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
   const isLoading = useAILoading();
   const aiResponse = useAIResponse();
   const excludedIds = useExcludedContextIds();
-  const { setAILoading, setAIResponse, appendAIContent, addRejectHistory, setBuiltContext } =
-    useEditorActions();
+  const injectedEntities = useInjectedEntities();
+  const brainstormStack = useBrainstormStack();
+  const {
+    setAILoading,
+    setAIResponse,
+    appendAIContent,
+    addRejectHistory,
+    setBuiltContext,
+    pushBrainstormLayer,
+    popBrainstormLayer,
+    clearBrainstormStack,
+  } = useEditorActions();
 
-  const { data: contextData } = useBuildContext(selectedId);
+  const additionalItems = injectedEntities.length > 0 ? injectedEntities : undefined;
+  const { data: contextData } = useBuildContext(selectedId, additionalItems);
   const [promptText, setPromptText] = React.useState('');
   const [showRejectModal, setShowRejectModal] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
   const lastActionRef = React.useRef<{ endpoint: string; body: Record<string, unknown> } | null>(
     null
   );
+
+  // Track current AI action for distinguishing continue vs brainstorm
+  const aiAction = useEditorStore((s) => s.aiAction);
+
+  // Brainstorm stack management refs
+  const pendingTopicRef = React.useRef<string>('');
+  const processedRef = React.useRef<string | null>(null);
 
   // Sync context data to store
   React.useEffect(() => {
@@ -91,6 +116,15 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
     void runStream('/ai/continue', body);
   };
 
+  const handleBrainstorm = () => {
+    if (!selectedId) return;
+    const topic = promptText.trim() || 'What should happen next in this chapter?';
+    pendingTopicRef.current = topic;
+    processedRef.current = null;
+    const body: Record<string, unknown> = { topic, chapterId: selectedId };
+    void runStream('/ai/brainstorm', body);
+  };
+
   const handleStop = () => {
     abortRef.current?.abort();
     setAILoading(false);
@@ -111,7 +145,16 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
   const handleRegenerate = () => {
     if (!lastActionRef.current) return;
     const { endpoint, body } = lastActionRef.current;
-    // Inject reject context from history
+
+    // For brainstorm regeneration: pop current layer so new results replace at same depth
+    if (endpoint === '/ai/brainstorm' && brainstormStack.length > 0) {
+      popBrainstormLayer();
+      processedRef.current = null;
+      void runStream(endpoint, body);
+      return;
+    }
+
+    // Inject reject context from history for continue regeneration
     const history = useEditorStore.getState().aiHistory;
     const lastReject = [...history].reverse().find((h) => h.rejectReason);
     if (lastReject?.rejectReason) {
@@ -120,14 +163,72 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
     void runStream(endpoint, body);
   };
 
-  // Cleanup abort controller on unmount
+  // When brainstorm stream finishes, parse and push to stack
+  React.useEffect(() => {
+    if (aiAction !== '/ai/brainstorm' || isLoading || !aiResponse) return;
+    if (processedRef.current === aiResponse) return;
+    processedRef.current = aiResponse;
+    const suggestions = parseBrainstorm(aiResponse);
+    if (suggestions.length > 0) {
+      pushBrainstormLayer({
+        suggestions,
+        selectedId: null,
+        topic: pendingTopicRef.current,
+      });
+    }
+    // Clear raw AI response (now captured in stack)
+    setAIResponse(null, null);
+  }, [aiAction, isLoading, aiResponse, pushBrainstormLayer, setAIResponse]);
+
+  const handleDigDeeper = (suggestion: BrainstormSuggestion) => {
+    if (!selectedId) return;
+    const topic = suggestion.title;
+    const userInstruction = suggestion.body
+      ? `The user selected direction: "${suggestion.title}: ${suggestion.body}". Provide 3-5 more specific sub-directions or scene breakdowns for this direction.`
+      : `The user selected direction: "${suggestion.title}". Provide 3-5 more specific sub-directions or scene breakdowns for this direction.`;
+    pendingTopicRef.current = topic;
+    processedRef.current = null;
+    const body: Record<string, unknown> = { topic, userInstruction, chapterId: selectedId };
+    void runStream('/ai/brainstorm', body);
+  };
+
+  const handleWriteThis = (suggestion: BrainstormSuggestion) => {
+    if (!selectedId) return;
+    const instruction = suggestion.body
+      ? `${suggestion.title}: ${suggestion.body}`
+      : suggestion.title;
+    setPromptText(instruction);
+    clearBrainstormStack();
+    // Auto-trigger continue with selected direction
+    const body: Record<string, unknown> = {
+      chapterId: selectedId,
+      userInstruction: instruction,
+    };
+    const excluded = Array.from(excludedIds);
+    if (excluded.length > 0) body.excludedContextIds = excluded;
+    void runStream('/ai/continue', body);
+  };
+
+  const handleBrainstormBack = () => {
+    popBrainstormLayer();
+  };
+
+  const handleDismissBrainstorm = () => {
+    clearBrainstormStack();
+    const { clearAIState } = useEditorStore.getState();
+    clearAIState();
+  };
+
+  // Abort stream on chapter switch or unmount
   React.useEffect(() => {
     return () => {
       abortRef.current?.abort();
     };
-  }, []);
+  }, [selectedId]);
 
-  const hasResponse = !!aiResponse && !isLoading;
+  const hasBrainstorm = brainstormStack.length > 0;
+  const isBrainstormLoading = aiAction === '/ai/brainstorm' && isLoading;
+  const isContinueResult = !!aiResponse && !isLoading && aiAction === '/ai/continue';
 
   return (
     <div className={styles.sidebar}>
@@ -137,15 +238,25 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
 
       <ContextPreview />
 
+      <PromptPresets
+        onSelect={(instruction) => {
+          setPromptText((prev) => (prev ? `${prev}\n${instruction}` : instruction));
+        }}
+      />
+
       <div className={styles.actions}>
         <div className={styles.quickActions}>
+          <Button variant="primary" onClick={handleContinue} disabled={isLoading || !selectedId}>
+            <Icon name="play" className={styles.btnIcon} />
+            Continue
+          </Button>
           <Button
-            size="sm"
-            variant="primary"
-            onClick={handleContinue}
+            variant="secondary"
+            onClick={handleBrainstorm}
             disabled={isLoading || !selectedId}
           >
-            Continue
+            <Icon name="sparkle" className={styles.btnIcon} />
+            Brainstorm
           </Button>
           {isLoading && (
             <Button size="sm" variant="ghost" onClick={handleStop}>
@@ -165,9 +276,22 @@ export function AISidebar({ onAccept }: AISidebarProps): React.ReactElement {
         </div>
       </div>
 
-      <StreamingResponse />
+      {/* Show brainstorm stack or streaming response */}
+      {hasBrainstorm || isBrainstormLoading ? (
+        <BrainstormPanel
+          stack={brainstormStack}
+          onDigDeeper={handleDigDeeper}
+          onWriteThis={handleWriteThis}
+          onBack={handleBrainstormBack}
+          onRegenerate={handleRegenerate}
+          onDismiss={handleDismissBrainstorm}
+          isLoading={isBrainstormLoading}
+        />
+      ) : (
+        <StreamingResponse />
+      )}
 
-      {hasResponse && (
+      {isContinueResult && (
         <div className={styles.actionBar}>
           <Button size="sm" variant="primary" onClick={handleAccept}>
             Accept

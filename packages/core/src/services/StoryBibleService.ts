@@ -21,7 +21,9 @@ import type {
   CreateLocationInput,
   CreateFactionInput,
   CreateTimelineEventInput,
+  UpdateTimelineEventInput,
   CreateForeshadowingInput,
+  UpdateForeshadowingInput,
   CreateArcInput,
   CreateHookInput,
   CharacterWithRelations,
@@ -527,6 +529,23 @@ export class StoryBibleService implements IStoryBibleService {
     return this.deps.timelineEventRepo.findAll();
   }
 
+  async updateTimelineEvent(id: number, input: UpdateTimelineEventInput): Promise<TimelineEvent> {
+    const existing = this.deps.timelineEventRepo.findById(id);
+    if (!existing) {
+      throw new EntityNotFoundError('TimelineEvent', id);
+    }
+
+    const event = this.deps.timelineEventRepo.update(id, input);
+
+    this.deps.eventBus.emit({
+      type: 'TIMELINE_EVENT_UPDATED',
+      event,
+      changes: input,
+    });
+
+    return event;
+  }
+
   async deleteTimelineEvent(id: number): Promise<void> {
     const event = this.deps.timelineEventRepo.findById(id);
     if (!event) {
@@ -674,6 +693,60 @@ export class StoryBibleService implements IStoryBibleService {
     });
 
     return foreshadowing;
+  }
+
+  async updateForeshadowing(
+    id: ForeshadowingId,
+    input: UpdateForeshadowingInput
+  ): Promise<Foreshadowing> {
+    const existing = this.deps.foreshadowingRepo.findById(id);
+    if (!existing) {
+      throw new EntityNotFoundError('Foreshadowing', id);
+    }
+
+    // Handle status changes via dedicated methods
+    if (input.status && input.status !== existing.status) {
+      if (input.status === 'resolved') {
+        // resolve requires resolvedChapter; ignore status-only change if not provided
+        // The resolve action is handled via resolveForeshadowing
+      } else if (input.status === 'abandoned') {
+        this.deps.foreshadowingRepo.abandon(id);
+      } else if (input.status === 'active') {
+        if (existing.status === 'abandoned') {
+          this.deps.foreshadowingRepo.reactivate(id);
+        }
+      }
+    }
+
+    // Update basic fields via repository
+    const { status: _status, ...fieldsToUpdate } = input;
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      this.deps.foreshadowingRepo.update(id, fieldsToUpdate);
+    }
+
+    const foreshadowing = this.deps.foreshadowingRepo.findById(id)!;
+
+    this.deps.eventBus.emit({
+      type: 'FORESHADOWING_UPDATED',
+      foreshadowing,
+      changes: input,
+    });
+
+    return foreshadowing;
+  }
+
+  async deleteForeshadowing(id: ForeshadowingId): Promise<void> {
+    const existing = this.deps.foreshadowingRepo.findById(id);
+    if (!existing) {
+      throw new EntityNotFoundError('Foreshadowing', id);
+    }
+
+    this.deps.foreshadowingRepo.delete(id);
+
+    this.deps.eventBus.emit({
+      type: 'FORESHADOWING_DELETED',
+      foreshadowingId: id,
+    });
   }
 
   // ============================================

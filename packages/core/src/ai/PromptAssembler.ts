@@ -11,6 +11,7 @@ import {
   DESCRIBE_TEMPLATE,
   BRAINSTORM_TEMPLATE,
   ASK_BIBLE_TEMPLATE,
+  ENTITY_EXTRACTION_TEMPLATE,
 } from './templates.js';
 
 export interface PromptTemplate {
@@ -73,6 +74,7 @@ export class PromptAssembler {
     this.registerTemplate('describe', DESCRIBE_TEMPLATE);
     this.registerTemplate('brainstorm', BRAINSTORM_TEMPLATE);
     this.registerTemplate('ask_bible', ASK_BIBLE_TEMPLATE);
+    this.registerTemplate('extract_entities', ENTITY_EXTRACTION_TEMPLATE);
   }
 
   /**

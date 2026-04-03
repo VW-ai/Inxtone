@@ -44,16 +44,18 @@ export function CrudTable<T extends { id: string | number }>({
 }: CrudTableProps<T>): React.ReactElement {
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await onDelete(deleteTarget);
       setDeleteTarget(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Delete failed: ${message}`);
+      setDeleteError(`Delete failed: ${message}`);
     } finally {
       setDeleting(false);
     }
@@ -137,13 +139,18 @@ export function CrudTable<T extends { id: string | number }>({
         </table>
       </div>
 
+      {deleteError && <div className={styles.error}>{deleteError}</div>}
+
       <ConfirmDialog
         isOpen={deleteTarget !== null}
         title="Delete Item"
         message="Are you sure you want to delete this item? This action cannot be undone."
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
         loading={deleting}
       />
     </div>

@@ -8,6 +8,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type {
   CreateForeshadowingRequest,
+  UpdateForeshadowingRequest,
   AddForeshadowingHintRequest,
   ResolveForeshadowingRequest,
 } from '@inxtone/core';
@@ -63,6 +64,27 @@ export const foreshadowingRoutes = (deps: RouteDeps): FastifyPluginAsync => {
     }>('/', async (request, reply) => {
       const item = await storyBibleService.createForeshadowing(request.body);
       return reply.status(201).send(success(item));
+    });
+
+    /**
+     * PATCH /:id - Update a foreshadowing
+     */
+    fastify.patch<{
+      Params: { id: string };
+      Body: UpdateForeshadowingRequest;
+    }>('/:id', async (request) => {
+      const item = await storyBibleService.updateForeshadowing(request.params.id, request.body);
+      return success(item);
+    });
+
+    /**
+     * DELETE /:id - Delete a foreshadowing
+     */
+    fastify.delete<{
+      Params: { id: string };
+    }>('/:id', async (request) => {
+      await storyBibleService.deleteForeshadowing(request.params.id);
+      return success({ deleted: true });
     });
 
     /**

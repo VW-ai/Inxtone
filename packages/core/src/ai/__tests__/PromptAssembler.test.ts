@@ -174,14 +174,14 @@ variables:
     it('returns all template names', () => {
       const assembler = new PromptAssembler();
       const names = assembler.listTemplates();
-      expect(names.length).toBe(5);
+      expect(names.length).toBe(6);
     });
 
     it('includes newly registered templates', () => {
       const assembler = new PromptAssembler();
       assembler.registerTemplate('custom', 'Content');
       expect(assembler.listTemplates()).toContain('custom');
-      expect(assembler.listTemplates().length).toBe(6);
+      expect(assembler.listTemplates().length).toBe(7);
     });
   });
 });

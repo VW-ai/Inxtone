@@ -8,6 +8,7 @@
 import React from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import { Modal } from '../../components/forms';
+import { mergeContent } from '../../lib/mergeContent';
 import styles from './AcceptPreviewModal.module.css';
 
 interface AcceptPreviewModalProps {
@@ -45,17 +46,7 @@ export function AcceptPreviewModal({
   const afterCursor = isInsertMode ? currentContent.slice(cursorPosition) : '';
 
   const handleConfirm = () => {
-    let merged: string;
-    if (isInsertMode) {
-      const before = beforeCursor;
-      const after = afterCursor;
-      const sep1 = before && !before.endsWith('\n') ? '\n\n' : '';
-      const sep2 = after && !after.startsWith('\n') ? '\n\n' : '';
-      merged = before + sep1 + newText + sep2 + after;
-    } else {
-      merged = currentContent + (currentContent ? '\n\n' : '') + newText;
-    }
-    onConfirm(merged);
+    onConfirm(mergeContent(currentContent, newText, cursorPosition));
   };
 
   if (!isOpen) return null;

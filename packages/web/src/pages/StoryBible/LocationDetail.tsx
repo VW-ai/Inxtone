@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Button, EditableField } from '../../components/ui';
+import { Button, EditableField, LoadingSpinner } from '../../components/ui';
 import { useLocation, useUpdateLocation } from '../../hooks';
 import type { LocationId, CreateLocationInput } from '@inxtone/core';
 import styles from './CharacterDetail.module.css';
@@ -30,10 +30,7 @@ export function LocationDetail({ locationId, onDelete }: LocationDetailProps): R
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span>Loading location...</span>
-        </div>
+        <LoadingSpinner text="Loading location..." />
       </div>
     );
   }

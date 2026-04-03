@@ -61,21 +61,22 @@ pnpm dev
 
 ## Documentation
 
-All project documentation lives in the `Meta/` folder:
+All project documentation lives in the `spec/` submodule (separate repo linked via git submodule):
 
 | Folder | Purpose |
 |--------|---------|
-| [Meta/Core/](Meta/Core/Meta.md) | Core documents (Product, Regulation, Technical) |
-| [Meta/Design/](Meta/Design/Meta.md) | Design language system |
-| [Meta/Architecture/](Meta/Architecture/Meta.md) | Technical architecture |
-| [Meta/Modules/](Meta/Modules/Meta.md) | Service module designs |
-| [Meta/Decisions/](Meta/Decisions/Meta.md) | Architecture Decision Records |
-| [Meta/Milestone/](Meta/Milestone/Meta.md) | Milestone planning and tracking |
+| [spec/Core/](spec/Core/Meta.md) | Core documents (Product, Regulation, Technical) |
+| [spec/Design/](spec/Design/Meta.md) | Design language system |
+| [spec/Architecture/](spec/Architecture/Meta.md) | Technical architecture |
+| [spec/Modules/](spec/Modules/Meta.md) | Service module designs |
+| [spec/Decisions/](spec/Decisions/Meta.md) | Architecture Decision Records |
+| [spec/Milestone/](spec/Milestone/Meta.md) | Milestone planning and tracking |
 
 Quick links:
-- [Product Requirements](Meta/Core/Product/Meta.md)
-- [Development Standards](Meta/Core/Regulation.md)
-- [Current Progress](Meta/Progress.md)
+- [Product Requirements](spec/Core/Product/Meta.md)
+- [Development Standards](spec/Core/Regulation/Meta.md)
+- [Current Progress](spec/Progress/LATEST.md)
+- [Session Skills](spec/Skills/Meta.md)
 - [Change Log](CHANGELOG.md)
 
 ## Tech Stack
@@ -115,7 +116,7 @@ M1 (Foundation) ──→ Interface + Test Stubs defined
 
 **Before starting any phase**: Run `/test-plan` skill to design test cases.
 
-See [Regulation.md](Meta/Core/Regulation.md#9-test-oriented-development) for detailed workflow.
+See [Testing.md](spec/Core/Regulation/Testing.md) for detailed workflow.
 
 ### Branching Strategy
 - `main` - Production-ready code
@@ -160,23 +161,23 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Folders: Title Case for docs, lowercase for code
 
 ### Labels
-See [Meta/Labels.md](Meta/Labels.md) for issue/PR labeling conventions.
+See [spec/Labels.md](spec/Labels.md) for issue/PR labeling conventions.
 
 ## Contributing
 
 ### For New Contributors
-1. Read [Product.md](Meta/Core/Product/Meta.md) to understand the project
-2. Read [Regulation.md](Meta/Core/Regulation.md) for coding standards
-3. Check [Meta/Milestone/](Meta/Milestone/Meta.md) for current priorities
+1. Read [Product.md](spec/Core/Product/Meta.md) to understand the project
+2. Read [Regulation](spec/Core/Regulation/Meta.md) for coding standards
+3. Check [spec/Milestone/](spec/Milestone/Meta.md) for current priorities
 4. Pick a task or open an issue
 
 ### Making Decisions
 For architectural decisions:
-1. Create an ADR in `Meta/Decisions/`
+1. Create an ADR in `spec/Decisions/`
 2. Discuss with team
 3. Update status once decided
 
 ### Tracking Progress
-- Update [Progress.md](Meta/Progress.md) daily during active development
-- Move completed items in [Todo.md](Meta/Todo.md) to archive
+- Update [Progress/LATEST.md](spec/Progress/LATEST.md) at end of each session
+- Move completed items in [Todo.md](spec/Todo.md) to archive
 - Update milestone status when deliverables complete

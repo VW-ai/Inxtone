@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **M6: Smart Intake** — AI-powered Story Bible population from natural language and existing chapters
+  - IntakeService: `decompose()` for NL text → structured entities, `extractFromChapters()` for multi-pass chapter extraction, `commitEntities()` for transactional write
+  - Bilingual prompt templates (English system instructions + Chinese domain examples) with `generateJSON<DecomposeResult>()`
+  - 3 API endpoints: `POST /api/intake/decompose` (JSON), `POST /api/intake/import-chapters` (SSE streaming), `POST /api/intake/commit` (JSON)
+  - Intake page (`/intake`): topic selector chips (Characters, World, Plot, Locations, Factions, Chapters, Auto-detect)
+  - Document intake: textarea + .txt/.md file drop, hint-aware extraction, entity review with Accept/Edit/Reject per entity
+  - Chapter import: file upload (.txt/.md/.docx) + paste, chapter boundary detection (`第N章`, `Chapter N`), 3-pass SSE extraction with progress bar
+  - Entity review panel: cards grouped by type with confidence badges, batch actions (Accept All, Accept All [type])
+  - Entity edit modal: dynamic form fields pre-filled with AI-extracted data
+  - DOCX parsing via `mammoth` library
+  - Zustand store + React Query hooks for intake state management
+  - SSE streaming hook with `fetch()` + `ReadableStream`, abort on unmount
+  - Accessibility: `role="progressbar"`, `aria-pressed` on topic chips, `role="group"` on selector
+  - 1262 tests passing across all packages
+- **M5: Export + Issues #9 & #8** — Multi-format export, StoryBiblePanel refactor, Context Preview UI
+  - ExportService with formatter strategy pattern: MarkdownFormatter, TxtFormatter, DocxFormatter, BibleFormatter
+  - Export API: `POST /api/export/chapters` (MD/TXT/DOCX), `POST /api/export/story-bible` (Markdown) — raw file download with Content-Disposition
+  - Web UI Export page: format selector, range picker (all/volume/chapters), outline/metadata options, blob download
+  - CLI: `inxtone export md|txt|docx|bible` with `--output`, `--volume`, `--chapters`, `--outline`, `--metadata` options
+  - StoryBiblePanel refactored: 848-line monolith → 15 focused modules (BibleSection, BibleEntityItem, 7 detail components, contextBuilders)
+  - Context Preview UI: token usage progress bar (green/yellow/red), color-coded L1-L5 layer badges with tooltips, pinned items section with bulk clear, empty/not-built states
+  - ADR-0005: Export Interface Simplification (dropped PDF, templates, pre-export checks)
+  - 1188 tests passing across 59 files
+- **M4.5: Writing Intelligence** — Search, interactive Bible panel, keyboard shortcuts, setup assist, entity extraction
+  - Unified FTS5 `search_index` table: 6 entity types (character, chapter, location, faction, arc, foreshadowing), 18 auto-sync triggers, migration 003
+  - SearchService: FTS5 MATCH with BM25 ranking, snippet highlighting, entity type filtering
+  - Cmd+K search modal: 300ms debounced search, grouped results, keyboard navigation (arrows + Enter/Escape), entity type filter chips
+  - Interactive Bible panel: 8 collapsible sections (Characters, Relationships, Locations, Arc, Foreshadowing, Hooks, World, Factions), inline detail cards, quick-search filter
+  - Inject-to-context: pin Bible entities as L5 context items for AI generation, visual indicators in ContextPreview
+  - Keyboard shortcuts: `Cmd+K` (search), `Cmd+S` (save), `Cmd+Enter` (AI Continue), `Cmd+/` (shortcut reference modal)
+  - Chapter Setup Assist: heuristic engine (previous chapter carry-over, arc roster, outline mention), suggestion chips with one-click attach
+  - Post-accept entity extraction: `generateJSON<T>()` on GeminiProvider, extraction prompt template, background extraction after AI accept, ExtractionReview panel with Link/Create/Dismiss actions
+  - Search API route: `GET /api/search?q=&types=&limit=`
+  - Extract entities API route: `POST /api/ai/extract-entities`
+  - 1093 tests passing across 50 files
 - **M3.5: Hackathon Submission** — Gemini 3 Hackathon deployment readiness
   - English AI prompts: all 5 templates + context builder labels translated
   - BYOK API key architecture: per-request `X-Gemini-Key` header, `POST /api/ai/verify-key` endpoint

@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Badge, Button, EmptyState, ConfirmDialog } from '../../components/ui';
+import { Badge, Button, EmptyState, ConfirmDialog, LoadingSpinner } from '../../components/ui';
 import { Input } from '../../components/forms';
 import {
   useForeshadowing,
@@ -126,7 +126,7 @@ function ForeshadowingCard({
       {hintCount > 0 && (
         <div className={styles.hintsSection}>
           <button className={styles.hintsToggle} onClick={() => setHintsExpanded(!hintsExpanded)}>
-            {hintsExpanded ? '\u25BC' : '\u25B6'} {hintCount} hint{hintCount !== 1 ? 's' : ''}
+            {hintsExpanded ? '\u25BE' : '\u25B8'} {hintCount} hint{hintCount !== 1 ? 's' : ''}
           </button>
           {hintsExpanded && (
             <ul className={styles.hintsList}>
@@ -221,7 +221,7 @@ export function ForeshadowingTracker(): React.ReactElement {
   }, [items]);
 
   if (isLoading) {
-    return <div className={styles.loading}>Loading foreshadowing...</div>;
+    return <LoadingSpinner text="Loading foreshadowing..." />;
   }
 
   if (sortedItems.length === 0) {

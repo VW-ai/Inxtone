@@ -347,6 +347,12 @@ export interface CreateForeshadowingRequest {
 }
 export type CreateForeshadowingResponse = ApiResponse<Foreshadowing>;
 
+/** PATCH /api/foreshadowing/:id */
+export type UpdateForeshadowingRequest = Partial<CreateForeshadowingRequest> & {
+  status?: 'active' | 'resolved' | 'abandoned';
+};
+export type UpdateForeshadowingResponse = ApiResponse<Foreshadowing>;
+
 /** POST /api/foreshadowing/:id/hint */
 export interface AddForeshadowingHintRequest {
   chapter: ChapterId;

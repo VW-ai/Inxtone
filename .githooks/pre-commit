@@ -1,0 +1,12 @@
+#!/bin/sh
+# Check for uncommitted spec changes before code commit
+# Warns but does not block — spec changes should be committed separately
+
+if [ -d spec ] && [ -n "$(cd spec && git status --porcelain 2>/dev/null)" ]; then
+  echo ""
+  echo "WARNING: You have uncommitted changes in spec/"
+  echo "Consider committing spec changes first:"
+  echo "  cd spec && git add -A && git commit -m 'docs: ...' && git push"
+  echo "  cd .. && git add spec && git commit -m 'docs: update spec submodule'"
+  echo ""
+fi

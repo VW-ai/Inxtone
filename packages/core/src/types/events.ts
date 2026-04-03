@@ -177,6 +177,12 @@ export interface TimelineEventCreatedEvent extends EventMeta {
   event: TimelineEvent;
 }
 
+export interface TimelineEventUpdatedEvent extends EventMeta {
+  type: 'TIMELINE_EVENT_UPDATED';
+  event: TimelineEvent;
+  changes?: Record<string, unknown>;
+}
+
 export interface TimelineEventDeletedEvent extends EventMeta {
   type: 'TIMELINE_EVENT_DELETED';
   eventId: number;
@@ -548,6 +554,7 @@ export type AppEvent =
   | FactionDeletedEvent
   // Timeline
   | TimelineEventCreatedEvent
+  | TimelineEventUpdatedEvent
   | TimelineEventDeletedEvent
   // Plot
   | ArcCreatedEvent
@@ -656,6 +663,7 @@ export const BROADCAST_EVENTS: EventType[] = [
   'FACTION_UPDATED',
   'FACTION_DELETED',
   'TIMELINE_EVENT_CREATED',
+  'TIMELINE_EVENT_UPDATED',
   'TIMELINE_EVENT_DELETED',
   'ARC_CREATED',
   'ARC_UPDATED',

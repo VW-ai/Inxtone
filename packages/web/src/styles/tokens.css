@@ -36,6 +36,14 @@
   --color-success: var(--green);
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
+  --color-warning-text: #fbbf24;
+  --color-bg-inset: rgba(255, 255, 255, 0.04);
+  --color-bg-subtle: rgba(255, 255, 255, 0.06);
+  --color-bg-subtle-hover: rgba(255, 255, 255, 0.1);
+  --color-success-bg: rgba(74, 222, 128, 0.15);
+  --color-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-muted-bg: rgba(136, 136, 136, 0.1);
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-hover: var(--gold-dim);
   --color-border-dim: rgba(255, 255, 255, 0.04);

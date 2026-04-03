@@ -16,7 +16,7 @@ import {
   useCursorPosition,
   useEditorActions,
 } from '../stores/useEditorStore';
-import { useSaveContent } from '../hooks';
+import { useSaveContent, useExtractEntities } from '../hooks';
 import { ChapterListPanel } from './Write/ChapterListPanel';
 import { StoryBiblePanel } from './Write/StoryBiblePanel';
 import { ChapterForm } from './Write/ChapterForm';
@@ -40,6 +40,7 @@ export function Write(): React.ReactElement {
   // Ref to read editor's current local content (avoids stale Query cache)
   const editorContentRef = React.useRef('');
   const saveMutation = useSaveContent();
+  const extractEntities = useExtractEntities();
 
   // Accept preview state
   const [showAcceptPreview, setShowAcceptPreview] = React.useState(false);
@@ -62,11 +63,13 @@ export function Write(): React.ReactElement {
         content: mergedContent,
         createVersion: false,
       });
+      // Fire entity extraction in background (non-blocking)
+      extractEntities.mutate({ chapterId: selectedId, content: mergedContent });
       setShowAcceptPreview(false);
       setPendingAIText('');
       clearAIState();
     },
-    [selectedId, saveMutation, clearAIState]
+    [selectedId, saveMutation, extractEntities, clearAIState]
   );
 
   const handlePreviewCancel = React.useCallback(() => {

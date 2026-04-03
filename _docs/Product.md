@@ -224,16 +224,20 @@ Acceptance Criteria:
 ```
 
 ```
-US-002: Import Existing Work
+US-002: Import Existing Work [M6 — Smart Intake]
 As a writer with an in-progress novel
 I want to import my existing chapters and notes
 So that I can use Inxtone without starting over
 
 Acceptance Criteria:
-- Drop TXT/MD files into chapters/ folder
-- `inxtone import` detects and indexes files
-- AI assists in extracting characters/world info into Story Bible
-- Original content preserved exactly (files not modified)
+- Upload/paste chapter files (TXT/MD/DOCX) or bulk text
+- AI extracts characters, relationships, world rules, plot threads from imported content
+- Step-by-step review: AI suggests → writer confirms/edits → commit to Story Bible
+- Natural language descriptions also accepted (paste a character sketch → structured card)
+- Original content preserved exactly
+
+Note: This is M6 (Smart Intake), not part of MVP scope.
+See Meta/Milestone/M6.md for full scope, ADR-0003 for rationale.
 ```
 
 ```
@@ -893,36 +897,59 @@ For million-word novels, context management is critical:
 
 ---
 
-## 8. MVP Scope (Phase 1)
+## 8. MVP Scope
 
-**Timeline:** 6-10 weeks (faster without server infrastructure)
+**Milestone Mapping:** M4 (Writing UX) → M5 (Export) → M6 (Smart Intake) → M7 (Search, Quality & v0.1.0)
 
-**Must Have (P0):**
-- [ ] `inxtone init` — Project scaffolding
-- [ ] `inxtone serve` — Local web UI server
-- [ ] Project dashboard (list chapters, word count)
-- [ ] Chapter editor (markdown, manual save)
-- [ ] Character cards (markdown + frontmatter)
-- [ ] World rules (basic structure)
-- [ ] Plot outliner (2 levels: Arc → Chapter)
-- [ ] Gemini integration (continuation, dialogue)
-- [ ] Basic context injection (current chapter + selected entities)
-- [ ] `inxtone export --txt` — TXT export
-- [ ] `inxtone export --docx` — Word export
+### M4–M5: Core Product Loop (Writing + Export)
+
+**Must Have (P0) — M4:**
+- [x] `inxtone init` — Project scaffolding
+- [x] `inxtone serve` — Local web UI server
+- [x] Project dashboard (list chapters, word count)
+- [x] Chapter editor with auto-save
+- [x] Character cards (structured data in SQLite)
+- [x] World rules, locations, factions, timeline
+- [x] Plot system (arcs, foreshadowing, hooks)
+- [x] Gemini 3.0 Pro integration (continuation, dialogue, brainstorm)
+- [x] 5-layer context injection engine
+- [x] Prompt presets (16 presets, 4 categories)
+- [x] Chapter outline editing
+- [x] Brainstorm mode with selectable suggestion cards
 - [ ] `inxtone config` — API key management
 
-**Should Have (P1):**
-- [ ] Relationship map (visual, D3.js or similar)
-- [ ] Foreshadowing tracker
-- [ ] Full-text search across project
-- [ ] Multiple AI prompt templates
-- [ ] `inxtone ask` — CLI query interface
+**Must Have (P0) — M5:**
+- [ ] `inxtone export md/docx/txt` — Multi-format export
+- [ ] Story Bible export (structured document)
+- [ ] Web UI export controls
 
-**Nice to Have (P2):**
-- [ ] Consistency checker
-- [ ] File watcher (auto-reload on external edit)
-- [ ] Chapter summaries (auto-generated)
-- [ ] Daily word count goals
+### M6: Smart Intake (Key Adoption Unlock)
+
+**Not part of MVP core, but critical for real-world adoption:**
+- [ ] Natural language → Story Bible (paste text → structured entities)
+- [ ] Chapter import + auto-extraction (bulk chapters → full Story Bible)
+- [ ] Outline import → plot architecture
+- [ ] "AI suggests → human confirms" review flow
+
+See [M6.md](Meta/Milestone/M6.md) and [ADR-0003](Meta/Decisions/ADR-0003-milestone-reorder-smart-intake.md).
+
+### M7: Search, Quality & v0.1.0 Release
+
+- [ ] FTS5 full-text search + Cmd+K modal
+- [ ] Semantic search (sqlite-vec embeddings)
+- [ ] QualityService (26 consistency rules)
+- [ ] Wayne Principles automated checking
+- [ ] Version history + diff viewer
+- [ ] Performance optimization, documentation, v0.1.0 release
+
+### Deferred (Post-v0.1.0)
+
+- Consistency checker (advanced, AI-powered)
+- Multi-model support (Claude, GPT, Ollama)
+- Relationship graph visualization
+- EPUB/PDF export
+- Plugin system
+- Cloud sync
 
 ---
 
@@ -973,28 +1000,36 @@ For million-word novels, context management is critical:
 
 ---
 
-## 11. Future Roadmap (Post-MVP)
+## 11. Roadmap
 
-**Phase 2: Enhanced AI & Polish (Q2 2026)**
-- Advanced consistency checking
+### Active Development (M4–M7)
+
+| Milestone | Focus | Status |
+|-----------|-------|--------|
+| M4 | Writing UX Polish | Active |
+| M5 | Export | Draft |
+| M6 | Smart Intake | Draft |
+| M7 | Search, Quality & v0.1.0 | Draft |
+
+See [Milestone Index](Meta/Milestone/Meta.md) for details.
+
+### Post-v0.1.0
+
+**M8: Multi-Model AI + Visualization (Q2 2026)**
 - Multi-model support (Claude, GPT, local Ollama)
-- Better context management (embeddings, semantic search)
-- Plugin/extension system
+- Relationship graph visualization
+- Ambient entity detection during writing
+- Advanced consistency checking
 
-**Phase 3: Power Features (Q3 2026)**
-- Style matching/learning from your writing
-- Advanced relationship graph visualization
-- Timeline view for plot
-- EPUB/Kindle export
+**M9: Export+ & Plugin System (Q3 2026)**
+- EPUB/PDF export
+- Plugin/extension architecture
+- Style matching from your writing
 
-**Phase 4: Ecosystem (Q4 2026)**
+**M10: Ecosystem (Q4 2026)**
 - Optional cloud sync (encrypted, user-controlled)
 - Template marketplace (share Story Bible templates)
-- VS Code extension (edit in IDE, sync with web UI)
-
-**Phase 5: Community (2027)**
-- Writing challenges/events
-- Optional public story sharing
+- VS Code extension
 - Community-contributed prompts
 
 ---

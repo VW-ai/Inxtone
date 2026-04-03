@@ -6,7 +6,13 @@
  */
 
 import React from 'react';
-import { Button, EmptyState, EditableField, EditableList } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  EditableField,
+  EditableList,
+  LoadingSpinner,
+} from '../../components/ui';
 import { useWorld, useUpdateWorld } from '../../hooks';
 import type { PowerSystem } from '@inxtone/core';
 import sharedStyles from './shared.module.css';
@@ -17,12 +23,7 @@ export function WorldSettings(): React.ReactElement {
   const updateWorld = useUpdateWorld();
 
   if (isLoading) {
-    return (
-      <div className={sharedStyles.loading}>
-        <div className={sharedStyles.spinner} />
-        <span>Loading world settings...</span>
-      </div>
-    );
+    return <LoadingSpinner text="Loading world settings..." />;
   }
 
   if (error) {

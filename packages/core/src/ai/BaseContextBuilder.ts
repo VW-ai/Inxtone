@@ -7,7 +7,7 @@
  * - getScopedRelationships(charIds) — fetch relationships between given characters
  * - truncateToFitBudget(items, budget) — priority-based token truncation
  *
- * @see Meta/Decisions/ADR-0002-ai-context-injection-strategy.md
+ * @see spec/Decisions/ADR-0002-ai-context-injection-strategy.md
  */
 
 import type { CharacterRepository } from '../db/repositories/CharacterRepository.js';
@@ -166,8 +166,10 @@ export abstract class BaseContextBuilder {
    * Lower priority items are dropped when budget is exceeded.
    */
   protected truncateToFitBudget(items: ContextItem[], budget: number): BuiltContext {
-    // Sort by priority descending
-    const sorted = [...items].sort((a, b) => b.priority - a.priority);
+    // Sort by priority descending, then by original order for stability
+    const indexed = items.map((item, i) => ({ item, i }));
+    indexed.sort((a, b) => b.item.priority - a.item.priority || a.i - b.i);
+    const sorted = indexed.map((x) => x.item);
 
     const included: ContextItem[] = [];
     let totalTokens = 0;

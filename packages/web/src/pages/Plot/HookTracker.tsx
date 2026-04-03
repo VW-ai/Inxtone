@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Badge, EmptyState } from '../../components/ui';
+import { Badge, EmptyState, LoadingSpinner } from '../../components/ui';
 import { useHooks, useChapters } from '../../hooks';
 import type { Hook, HookType, HookStyle, Chapter } from '@inxtone/core';
 import styles from './HookTracker.module.css';
@@ -99,7 +99,7 @@ export function HookTracker(): React.ReactElement {
   }, [hooks, chapterMap]);
 
   if (hooksLoading) {
-    return <div className={styles.loading}>Loading hooks...</div>;
+    return <LoadingSpinner text="Loading hooks..." />;
   }
 
   if (groups.length === 0) {

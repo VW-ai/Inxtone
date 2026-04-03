@@ -10,7 +10,7 @@
  * MVP: Single provider (Gemini 2.5 Pro), no fallback chain.
  * Provider abstraction preserved in IAIService interface for M4+ expansion.
  *
- * @see Meta/Modules/03_ai_service.md §2.3 Gemini Provider 调用
+ * @see spec/Modules/03_ai_service.md §2.3 Gemini Provider 调用
  */
 
 import { GoogleGenAI } from '@google/genai';
@@ -122,6 +122,55 @@ export class GeminiProvider {
         return;
       }
     }
+  }
+
+  /**
+   * Non-streaming JSON generation.
+   * Uses responseMimeType: 'application/json' for structured output.
+   * Retries on retriable errors with exponential backoff.
+   */
+  async generateJSON<T>(prompt: string, options?: AIGenerationOptions): Promise<T> {
+    if (!this.isConfigured()) {
+      throw new Error('AI_PROVIDER_ERROR: Gemini API key not configured.');
+    }
+
+    const model = options?.model ?? this.options.model;
+    const temperature = options?.temperature ?? 0.3;
+    const maxOutputTokens = options?.maxTokens ?? this.options.maxOutputTokens;
+    const fullPrompt = `${prompt}\n\nRespond with valid JSON only. No markdown, no explanation, no code fences.`;
+
+    for (let attempt = 1; attempt <= this.options.retryCount; attempt++) {
+      try {
+        const client = this.getClient();
+        const response = await client.models.generateContent({
+          model,
+          contents: fullPrompt,
+          config: {
+            temperature,
+            maxOutputTokens,
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const text = response.text ?? '';
+        const parsed: unknown = JSON.parse(text);
+
+        // Basic validation: ensure result is not null/undefined
+        if (parsed == null) {
+          throw new Error('AI_PROVIDER_ERROR: AI returned null/empty JSON response.');
+        }
+
+        return parsed as T;
+      } catch (err: unknown) {
+        if (this.isRetriable(err) && attempt < this.options.retryCount) {
+          await this.sleep(this.options.retryDelayMs * Math.pow(2, attempt - 1));
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw new Error('AI_PROVIDER_ERROR: Max retries exceeded.');
   }
 
   /**

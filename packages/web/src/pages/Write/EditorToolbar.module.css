@@ -44,6 +44,35 @@
   font-family: var(--font-mono);
 }
 
+.autoSave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.autoSave.autoSaveError {
+  color: var(--color-error, #ef4444);
+}
+
+.autoSaveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-success, #22c55e);
+}
+
+.autoSaveDotPulse {
+  animation: pulse 1.2s ease-in-out infinite;
+  background: var(--gold);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .saveIndicator {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);

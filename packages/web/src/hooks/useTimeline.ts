@@ -3,9 +3,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost, apiDelete } from '../lib/api';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { showError } from '../lib/utils';
-import type { TimelineEvent, CharacterId, LocationId } from '@inxtone/core';
+import type {
+  TimelineEvent,
+  CharacterId,
+  LocationId,
+  UpdateTimelineEventInput,
+} from '@inxtone/core';
 
 // Query Keys
 export const timelineKeys = {
@@ -29,6 +34,13 @@ export function useTimeline() {
   });
 }
 
+// Get single timeline event (derived from list cache)
+export function useTimelineEvent(id: number | null) {
+  const { data: events, ...rest } = useTimeline();
+  const event = id != null ? events?.find((e) => e.id === id) : undefined;
+  return { data: event, ...rest };
+}
+
 // Create timeline event
 export function useCreateTimelineEvent() {
   const queryClient = useQueryClient();
@@ -40,6 +52,20 @@ export function useCreateTimelineEvent() {
       void queryClient.invalidateQueries({ queryKey: timelineKeys.all });
     },
     onError: (error) => showError('Failed to create timeline event', error),
+  });
+}
+
+// Update timeline event
+export function useUpdateTimelineEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateTimelineEventInput }) =>
+      apiPatch<TimelineEvent, UpdateTimelineEventInput>(`/timeline/${id}`, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: timelineKeys.all });
+    },
+    onError: (error) => showError('Failed to update timeline event', error),
   });
 }
 

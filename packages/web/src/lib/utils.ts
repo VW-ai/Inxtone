@@ -2,6 +2,8 @@
  * Utility functions
  */
 
+import { useNotificationStore } from '../stores/useNotificationStore';
+
 /**
  * Extract error message from unknown error type
  */
@@ -12,9 +14,9 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Show error alert with formatted message
+ * Show error notification (replaces blocking alert())
  */
 export function showError(context: string, error: unknown): void {
   const message = getErrorMessage(error);
-  alert(`${context}: ${message}`);
+  useNotificationStore.getState().addNotification(`${context}: ${message}`, 'error');
 }

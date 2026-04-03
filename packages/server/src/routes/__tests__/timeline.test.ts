@@ -108,6 +108,77 @@ describe('Timeline API - /api/timeline', () => {
   });
 
   // ------------------------------------------
+  // PATCH /api/timeline/:id
+  // ------------------------------------------
+
+  describe('PATCH /api/timeline/:id', () => {
+    it('should update description and return 200', async () => {
+      // Create an event first
+      const createRes = await ctx.server.inject({
+        method: 'POST',
+        url: '/api/timeline',
+        payload: { description: '故事开始' },
+      });
+      const eventId = createRes.json().data.id;
+
+      const res = await ctx.server.inject({
+        method: 'PATCH',
+        url: `/api/timeline/${eventId}`,
+        payload: { description: '故事正式开始' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.data.description).toBe('故事正式开始');
+      expect(body.data.id).toBe(eventId);
+    });
+
+    it('should update eventDate and return 200', async () => {
+      const createRes = await ctx.server.inject({
+        method: 'POST',
+        url: '/api/timeline',
+        payload: { description: '主角觉醒', eventDate: '2024-01-01' },
+      });
+      const eventId = createRes.json().data.id;
+
+      const res = await ctx.server.inject({
+        method: 'PATCH',
+        url: `/api/timeline/${eventId}`,
+        payload: { eventDate: '2024-06-15' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.data.eventDate).toBe('2024-06-15');
+    });
+
+    it('should reflect update in subsequent GET', async () => {
+      const createRes = await ctx.server.inject({
+        method: 'POST',
+        url: '/api/timeline',
+        payload: { description: '故事开始' },
+      });
+      const eventId = createRes.json().data.id;
+
+      await ctx.server.inject({
+        method: 'PATCH',
+        url: `/api/timeline/${eventId}`,
+        payload: { description: '修改后的描述' },
+      });
+
+      const res = await ctx.server.inject({
+        method: 'GET',
+        url: '/api/timeline',
+      });
+
+      const body = res.json();
+      expect(body.data[0].description).toBe('修改后的描述');
+    });
+  });
+
+  // ------------------------------------------
   // DELETE /api/timeline/:id
   // ------------------------------------------
 

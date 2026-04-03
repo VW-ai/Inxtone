@@ -3,13 +3,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost, apiDelete } from '../lib/api';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../lib/api';
 import { showError } from '../lib/utils';
 import type {
   Foreshadowing,
   ForeshadowingId,
   ChapterId,
   CreateForeshadowingInput,
+  UpdateForeshadowingInput,
 } from '@inxtone/core';
 
 // Helper to normalize filters (remove undefined values)
@@ -56,6 +57,21 @@ export function useCreateForeshadowing() {
       void queryClient.invalidateQueries({ queryKey: foreshadowingKeys.all });
     },
     onError: (error) => showError('Failed to create foreshadowing', error),
+  });
+}
+
+// Update foreshadowing
+export function useUpdateForeshadowing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: ForeshadowingId; data: UpdateForeshadowingInput }) =>
+      apiPatch<Foreshadowing, UpdateForeshadowingInput>(`/foreshadowing/${id}`, data),
+    onSuccess: (_, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: foreshadowingKeys.all });
+      void queryClient.invalidateQueries({ queryKey: foreshadowingKeys.detail(id) });
+    },
+    onError: (error) => showError('Failed to update foreshadowing', error),
   });
 }
 

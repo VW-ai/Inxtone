@@ -15,8 +15,8 @@
  * Token budget: 1M total - 4K output reserve - 2K prompt reserve = ~994K available
  * When budget is exceeded, lower priority items are dropped first.
  *
- * @see Meta/Modules/03_ai_service.md §二 ContextBuilder 构建流程
- * @see Meta/Decisions/ADR-0002-ai-context-injection-strategy.md
+ * @see spec/Modules/03_ai_service.md §二 ContextBuilder 构建流程
+ * @see spec/Decisions/ADR-0002-ai-context-injection-strategy.md
  */
 
 import type { Chapter, ChapterId } from '../types/entities.js';

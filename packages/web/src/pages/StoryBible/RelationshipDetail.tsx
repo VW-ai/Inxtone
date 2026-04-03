@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Button, EditableField, EditableList } from '../../components/ui';
+import { Button, EditableField, EditableList, LoadingSpinner } from '../../components/ui';
 import { useRelationship, useCharacters, useUpdateRelationship } from '../../hooks';
 import type { CharacterId, CreateRelationshipInput } from '@inxtone/core';
 import styles from './RelationshipDetail.module.css';
@@ -41,10 +41,7 @@ export function RelationshipDetail({
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span>Loading relationship...</span>
-        </div>
+        <LoadingSpinner text="Loading relationship..." />
       </div>
     );
   }

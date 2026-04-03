@@ -11,6 +11,8 @@
  *   inxtone bible list [type]  # List Story Bible entities
  *   inxtone bible show <type> <id>  # Show entity details
  *   inxtone bible search <query>    # Search Story Bible
+ *   inxtone export md|txt|docx     # Export chapters
+ *   inxtone export bible           # Export Story Bible
  *   inxtone --version          # Show version
  *   inxtone --help             # Show help
  */
@@ -19,7 +21,16 @@ import { Command } from 'commander';
 import { render } from 'ink';
 import { VERSION } from '@inxtone/core';
 import { App } from './app.js';
-import { initProject, serve, bibleList, bibleShow, bibleSearch } from './commands/index.js';
+import {
+  initProject,
+  serve,
+  bibleList,
+  bibleShow,
+  bibleSearch,
+  exportChapters,
+  exportBible,
+  type ExportCommandOptions,
+} from './commands/index.js';
 
 const program = new Command();
 
@@ -71,6 +82,53 @@ bible
   .description('Search Story Bible content')
   .action(async (query: string) => {
     await bibleSearch(query);
+  });
+
+// Export command
+const exportCmd = program.command('export').description('Export chapters or Story Bible to file');
+
+exportCmd
+  .command('md')
+  .description('Export chapters as Markdown')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--volume <id>', 'Export a specific volume')
+  .option('--chapters <ids>', 'Export specific chapter IDs (comma-separated)')
+  .option('--outline', 'Include chapter outlines')
+  .option('--metadata', 'Include word counts and status')
+  .action(async (options: ExportCommandOptions) => {
+    await exportChapters('md', options);
+  });
+
+exportCmd
+  .command('txt')
+  .description('Export chapters as plain text')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--volume <id>', 'Export a specific volume')
+  .option('--chapters <ids>', 'Export specific chapter IDs (comma-separated)')
+  .option('--outline', 'Include chapter outlines')
+  .option('--metadata', 'Include word counts and status')
+  .action(async (options: ExportCommandOptions) => {
+    await exportChapters('txt', options);
+  });
+
+exportCmd
+  .command('docx')
+  .description('Export chapters as DOCX')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--volume <id>', 'Export a specific volume')
+  .option('--chapters <ids>', 'Export specific chapter IDs (comma-separated)')
+  .option('--outline', 'Include chapter outlines')
+  .option('--metadata', 'Include word counts and status')
+  .action(async (options: ExportCommandOptions) => {
+    await exportChapters('docx', options);
+  });
+
+exportCmd
+  .command('bible')
+  .description('Export Story Bible as Markdown')
+  .option('-o, --output <path>', 'Output file path')
+  .action(async (options: { output?: string }) => {
+    await exportBible(options);
   });
 
 // Default action: start TUI mode

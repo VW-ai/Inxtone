@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Badge, Button, ConfirmDialog } from '../../components/ui';
+import { Badge, Button, ConfirmDialog, LoadingSpinner } from '../../components/ui';
 import { Select } from '../../components/forms';
 import { useChapters, useArcs, useDeleteChapter } from '../../hooks';
 import {
@@ -51,7 +51,7 @@ export function ChapterListPanel(): React.ReactElement {
 
   const sorted = React.useMemo(() => {
     if (!chapters) return [];
-    return [...chapters].sort((a, b) => a.id - b.id);
+    return [...chapters].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [chapters]);
 
   return (
@@ -73,7 +73,7 @@ export function ChapterListPanel(): React.ReactElement {
       </div>
 
       <div className={styles.list}>
-        {isLoading && <p className={styles.loading}>Loading...</p>}
+        {isLoading && <LoadingSpinner text="Loading..." size="sm" />}
         {!isLoading && sorted.length === 0 && <p className={styles.empty}>No chapters yet</p>}
         {sorted.map((ch: Chapter) => (
           <div
@@ -122,8 +122,12 @@ export function ChapterListPanel(): React.ReactElement {
         message="This will permanently delete this chapter and all its versions."
         onConfirm={() => {
           if (deleteId != null) {
-            deleteMutation.mutate(deleteId);
-            if (deleteId === selectedId) selectChapter(null);
+            const wasSelected = deleteId === selectedId;
+            deleteMutation.mutate(deleteId, {
+              onSuccess: () => {
+                if (wasSelected) selectChapter(null);
+              },
+            });
           }
           setDeleteId(null);
         }}

@@ -109,7 +109,7 @@
 
 .cardLink:hover {
   color: var(--color-gold);
-  background: rgba(201, 168, 108, 0.1);
+  background: var(--color-accent-dim);
 }
 
 .cardBody {

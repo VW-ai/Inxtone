@@ -11,6 +11,7 @@ import {
   useIsDirty,
   useLastSavedAt,
   useAIPanelOpen,
+  useAutoSaveStatus,
   useEditorActions,
 } from '../../stores/useEditorStore';
 import { useChapterWithContent } from '../../hooks';
@@ -46,6 +47,7 @@ export function EditorToolbar({ content, onSave, saving }: EditorToolbarProps): 
   const isDirty = useIsDirty();
   const lastSavedAt = useLastSavedAt();
   const aiPanelOpen = useAIPanelOpen();
+  const autoSaveStatus = useAutoSaveStatus();
   const { toggleAIPanel, openChapterForm } = useEditorActions();
   const { data: chapter } = useChapterWithContent(selectedId);
 
@@ -62,6 +64,15 @@ export function EditorToolbar({ content, onSave, saving }: EditorToolbarProps): 
     }
     return 'Saved';
   }, [saving, isDirty, lastSavedAt]);
+
+  const autoSaveLabel =
+    autoSaveStatus === 'saving'
+      ? 'Auto-saving...'
+      : autoSaveStatus === 'saved'
+        ? 'Auto-saved'
+        : autoSaveStatus === 'error'
+          ? 'Auto-save failed'
+          : null;
 
   return (
     <div className={styles.toolbar}>
@@ -86,6 +97,16 @@ export function EditorToolbar({ content, onSave, saving }: EditorToolbarProps): 
 
       <div className={styles.right}>
         <span className={styles.wordCount}>{wordCount} words</span>
+        {autoSaveLabel && (
+          <span
+            className={`${styles.autoSave} ${autoSaveStatus === 'error' ? styles.autoSaveError : ''}`}
+          >
+            <span
+              className={`${styles.autoSaveDot} ${autoSaveStatus === 'saving' ? styles.autoSaveDotPulse : ''}`}
+            />
+            {autoSaveLabel}
+          </span>
+        )}
         <span className={`${styles.saveIndicator} ${isDirty ? styles.unsaved : ''}`}>
           {saveLabel}
         </span>

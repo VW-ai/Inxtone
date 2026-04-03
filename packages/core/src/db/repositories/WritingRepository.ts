@@ -52,6 +52,7 @@ interface ChapterRow {
   arc_id: string | null;
   title: string | null;
   status: string;
+  sort_order: number;
   outline: string | null;
   content: string | null;
   word_count: number;
@@ -207,18 +208,30 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
   createChapter(input: CreateChapterInput): Chapter {
     const now = this.now();
 
+    // Auto-assign sort_order: next max within volume (or globally)
+    const maxRow = input.volumeId
+      ? this.db.queryOne<{ max_sort: number | null }>(
+          `SELECT MAX(sort_order) as max_sort FROM chapters WHERE volume_id = ?`,
+          [input.volumeId]
+        )
+      : this.db.queryOne<{ max_sort: number | null }>(
+          `SELECT MAX(sort_order) as max_sort FROM chapters`
+        );
+    const nextSortOrder = (maxRow?.max_sort ?? 0) + 1;
+
     const result = this.db.run(
       `INSERT INTO chapters (
-        volume_id, arc_id, title, status, outline,
+        volume_id, arc_id, title, status, sort_order, outline,
         content, word_count,
         characters, locations,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.volumeId ?? null,
         input.arcId ?? null,
         input.title ?? null,
         input.status ?? 'outline', // Use input status or default to 'outline'
+        nextSortOrder,
         this.toJson(input.outline),
         null, // No content on creation
         0, // Initial word count
@@ -237,7 +250,7 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
    */
   findChapterById(id: ChapterId): Chapter | null {
     const row = this.db.queryOne<ChapterRow>(
-      `SELECT id, volume_id, arc_id, title, status, outline,
+      `SELECT id, volume_id, arc_id, title, status, sort_order, outline,
               word_count, characters, locations,
               foreshadowing_planted, foreshadowing_hinted, foreshadowing_resolved,
               emotion_curve, tension, created_at, updated_at
@@ -260,11 +273,11 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
    */
   findAllChapters(): Chapter[] {
     const rows = this.db.query<ChapterRow>(
-      `SELECT id, volume_id, arc_id, title, status, outline,
+      `SELECT id, volume_id, arc_id, title, status, sort_order, outline,
               word_count, characters, locations,
               foreshadowing_planted, foreshadowing_hinted, foreshadowing_resolved,
               emotion_curve, tension, created_at, updated_at
-       FROM chapters ORDER BY id ASC`
+       FROM chapters ORDER BY sort_order ASC, id ASC`
     );
     return rows.map((row) => this.mapChapterRow(row, false));
   }
@@ -274,11 +287,11 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
    */
   findChaptersByVolume(volumeId: VolumeId): Chapter[] {
     const rows = this.db.query<ChapterRow>(
-      `SELECT id, volume_id, arc_id, title, status, outline,
+      `SELECT id, volume_id, arc_id, title, status, sort_order, outline,
               word_count, characters, locations,
               foreshadowing_planted, foreshadowing_hinted, foreshadowing_resolved,
               emotion_curve, tension, created_at, updated_at
-       FROM chapters WHERE volume_id = ? ORDER BY id ASC`,
+       FROM chapters WHERE volume_id = ? ORDER BY sort_order ASC, id ASC`,
       [volumeId]
     );
     return rows.map((row) => this.mapChapterRow(row, false));
@@ -289,11 +302,11 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
    */
   findChaptersByArc(arcId: ArcId): Chapter[] {
     const rows = this.db.query<ChapterRow>(
-      `SELECT id, volume_id, arc_id, title, status, outline,
+      `SELECT id, volume_id, arc_id, title, status, sort_order, outline,
               word_count, characters, locations,
               foreshadowing_planted, foreshadowing_hinted, foreshadowing_resolved,
               emotion_curve, tension, created_at, updated_at
-       FROM chapters WHERE arc_id = ? ORDER BY id ASC`,
+       FROM chapters WHERE arc_id = ? ORDER BY sort_order ASC, id ASC`,
       [arcId]
     );
     return rows.map((row) => this.mapChapterRow(row, false));
@@ -304,11 +317,11 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
    */
   findChaptersByStatus(status: ChapterStatus): Chapter[] {
     const rows = this.db.query<ChapterRow>(
-      `SELECT id, volume_id, arc_id, title, status, outline,
+      `SELECT id, volume_id, arc_id, title, status, sort_order, outline,
               word_count, characters, locations,
               foreshadowing_planted, foreshadowing_hinted, foreshadowing_resolved,
               emotion_curve, tension, created_at, updated_at
-       FROM chapters WHERE status = ? ORDER BY id ASC`,
+       FROM chapters WHERE status = ? ORDER BY sort_order ASC, id ASC`,
       [status]
     );
     return rows.map((row) => this.mapChapterRow(row, false));
@@ -392,9 +405,7 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
 
   /**
    * Reorder chapters by providing ordered chapter IDs.
-   * Note: In SQLite, we don't have explicit position column yet.
-   * For Phase 1, this is a no-op that validates chapter existence.
-   * TODO: Add position column in future phase if needed.
+   * Updates sort_order for each chapter based on array position.
    */
   reorderChapters(chapterIds: ChapterId[]): void {
     // Validate all chapters exist
@@ -403,8 +414,15 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
         throw new Error(`Chapter ${id} not found`);
       }
     }
-    // In Phase 1, we just validate existence
-    // Future: Implement position-based ordering
+
+    const now = this.now();
+    for (let i = 0; i < chapterIds.length; i++) {
+      this.db.run(`UPDATE chapters SET sort_order = ?, updated_at = ? WHERE id = ?`, [
+        i + 1,
+        now,
+        chapterIds[i]!,
+      ]);
+    }
   }
 
   // ===================================
@@ -685,6 +703,7 @@ export class WritingRepository extends BaseRepository<Chapter, ChapterId> {
     const chapter: Chapter = {
       id: row.id,
       status: row.status as ChapterStatus,
+      sortOrder: row.sort_order ?? 0,
       wordCount: row.word_count,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

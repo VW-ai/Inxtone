@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Button, EditableField } from '../../components/ui';
+import { Button, EditableField, LoadingSpinner } from '../../components/ui';
 import { useHook, useUpdateHook } from '../../hooks';
 import type { HookId, CreateHookInput } from '@inxtone/core';
 import styles from './CharacterDetail.module.css';
@@ -36,10 +36,7 @@ export function HookDetail({ hookId, onDelete }: HookDetailProps): React.ReactEl
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span>Loading hook...</span>
-        </div>
+        <LoadingSpinner text="Loading hook..." />
       </div>
     );
   }

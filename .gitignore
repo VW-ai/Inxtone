@@ -38,5 +38,6 @@ yarn.lock
 # pnpm store
 .pnpm-store/
 
-# Claude Code local settings
-.claude/
+# Claude Code local settings (allow skills/ for team sharing)
+.claude/*
+!.claude/skills/

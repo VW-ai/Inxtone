@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Button, EditableField, EditableList } from '../../components/ui';
+import { Button, EditableField, EditableList, LoadingSpinner } from '../../components/ui';
 import { useFaction, useUpdateFaction, useCharacters } from '../../hooks';
 import type { FactionId, CharacterId, CreateFactionInput } from '@inxtone/core';
 import styles from './CharacterDetail.module.css';
@@ -48,10 +48,7 @@ export function FactionDetail({ factionId, onDelete }: FactionDetailProps): Reac
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span>Loading faction...</span>
-        </div>
+        <LoadingSpinner text="Loading faction..." />
       </div>
     );
   }

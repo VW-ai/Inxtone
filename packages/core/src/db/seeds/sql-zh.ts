@@ -309,10 +309,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系1: 句读先生 → 沈书 (mentor)
 ('C-006', 'C-001', 'mentor',
   '句读先生以讲故事的方式引导沈书',
-  json_object(
-    'source', '句读先生在等能读懂墨典的人',
-    'target', '沈书需要理解残章'
-  ),
+  '句读先生在等能读懂墨典的人；沈书需要理解残章',
   json_array('沈书质疑句读先生为何不直说'),
   json_array('如果沈书发现句读先生隐瞒了关键信息'),
   '智慧引导与视角开阔',
@@ -324,10 +321,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系2: 落棠 → 沈书 (companion)
 ('C-002', 'C-001', 'companion',
   '从监视任务到同行',
-  json_object(
-    'source', '落棠想找到剑上古文的含义',
-    'target', '沈书需要保护'
-  ),
+  '落棠想找到剑上古文的含义；沈书需要保护',
   json_array(
     '落棠认为应该交给宗门',
     '沈书冒险时落棠反对'
@@ -342,10 +336,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系3: 沈书 → 墨痴 (rival)
 ('C-001', 'C-003', 'rival',
   '都在追寻残章',
-  json_object(
-    'source', '沈书用心读',
-    'target', '墨痴用命读'
-  ),
+  '沈书用心读；墨痴用命读',
   json_array('对残章的态度截然不同'),
   json_array('不可能——命运已经绑定'),
   '镜像与对照',
@@ -357,10 +348,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系4: 钟离白 → 沈书 (enemy)
 ('C-005', 'C-001', 'enemy',
   '理念之敌',
-  json_object(
-    'source', '钟离白要销毁沈书的残章',
-    'target', '沈书追求真理'
-  ),
+  '钟离白要销毁沈书的残章；沈书追求真理',
   json_array('对残章存废的根本分歧'),
   json_array('如果钟离白承认沈书的路是对的'),
   '对抗与危机',
@@ -372,10 +360,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系5: 阿鹿 → 沈书 (confidant)
 ('C-004', 'C-001', 'confidant',
   '阿鹿看得见沈书看不见的东西',
-  json_object(
-    'source', '阿鹿想理解自己的能力',
-    'target', '沈书需要另一双眼睛'
-  ),
+  '阿鹿想理解自己的能力；沈书需要另一双眼睛',
   json_array('阿鹿的直觉与沈书的理性冲突'),
   json_array('不会——阿鹿的忠诚是本能的'),
   '视觉与感知',
@@ -387,10 +372,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系6: 钟离白 → 墨痴 (enemy)
 ('C-005', 'C-003', 'enemy',
   '钟离白认为墨痴是残章祸害世人的铁证',
-  json_object(
-    'source', '钟离白要消灭墨痴',
-    'target', '墨痴不在乎钟离白'
-  ),
+  '钟离白要消灭墨痴；墨痴不在乎钟离白',
   json_array('对残章的根本态度'),
   json_array('墨痴死亡或找回名字'),
   '秩序与混沌',
@@ -402,10 +384,7 @@ INSERT OR REPLACE INTO relationships (source_id, target_id, type, join_reason, i
 -- 关系7: 句读先生 → 沈书 (companion)
 ('C-006', 'C-001', 'companion',
   '若即若离的引路人',
-  json_object(
-    'source', '句读先生在观察也在保护',
-    'target', '沈书需要方向'
-  ),
+  '句读先生在观察也在保护；沈书需要方向',
   json_array('句读先生总是只给暗示不给答案'),
   json_array('故事讲完的那天'),
   '见证与记录',

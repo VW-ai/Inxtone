@@ -9,6 +9,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCharacters, useChapters, useArcs, useForeshadowing, useHooks } from '../hooks';
 import type { Arc, Chapter, Foreshadowing } from '@inxtone/core';
+import { LoadingSpinner } from '../components/ui';
 import { WelcomeScreen } from '../components/WelcomeScreen';
 import styles from './Dashboard.module.css';
 
@@ -249,7 +250,7 @@ export function Dashboard(): React.ReactElement {
   }, [chapters, characters, arcs]);
 
   if (isLoading) {
-    return <div className={styles.loading}>Loading dashboard...</div>;
+    return <LoadingSpinner text="Loading dashboard..." />;
   }
 
   // Show WelcomeScreen when database is empty (no characters and no chapters)

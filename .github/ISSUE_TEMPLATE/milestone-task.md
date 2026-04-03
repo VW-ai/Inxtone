@@ -7,7 +7,7 @@ assignees: ''
 ---
 
 ## Milestone
-[M1 - Project Scaffolding](../../Meta/Milestone/M1.md)
+[M1 - Project Scaffolding](../../spec/Milestone/M1.md)
 
 ## Task
 {Task description from milestone}

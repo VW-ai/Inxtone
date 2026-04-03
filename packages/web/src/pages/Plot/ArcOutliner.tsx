@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, EmptyState } from '../../components/ui';
+import { Badge, EmptyState, LoadingSpinner } from '../../components/ui';
 import { useArcs, useChapters } from '../../hooks';
 import { useEditorStore } from '../../stores/useEditorStore';
 import type { Arc, ArcSection, ArcStatus, ChapterId, Chapter } from '@inxtone/core';
@@ -83,7 +83,7 @@ function ArcNode({
   return (
     <div className={styles.arcCard}>
       <button className={styles.arcHeader} onClick={() => setExpanded(!expanded)}>
-        <span className={styles.expandIcon}>{expanded ? '\u25BC' : '\u25B6'}</span>
+        <span className={styles.expandIcon}>{expanded ? '\u25BE' : '\u25B8'}</span>
         <span className={styles.arcName}>{arc.name}</span>
         <Badge variant={arc.type === 'main' ? 'primary' : 'default'}>{arc.type}</Badge>
         <Badge variant={STATUS_VARIANTS[arc.status]}>{arc.status.replace('_', ' ')}</Badge>
@@ -140,7 +140,7 @@ export function ArcOutliner(): React.ReactElement {
   );
 
   if (isLoading) {
-    return <div className={styles.loading}>Loading arcs...</div>;
+    return <LoadingSpinner text="Loading arcs..." />;
   }
 
   if (sortedArcs.length === 0) {

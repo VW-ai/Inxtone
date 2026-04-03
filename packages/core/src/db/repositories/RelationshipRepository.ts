@@ -230,6 +230,23 @@ export class RelationshipRepository extends BaseRepository<Relationship, number>
   }
 
   /**
+   * Normalize independentGoal: legacy Chinese seed stored it as
+   * json_object('source','…','target','…'). Convert to plain string.
+   */
+  private normalizeGoal(raw: string): string {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && ('source' in parsed || 'target' in parsed)) {
+        const obj = parsed as Record<string, string>;
+        return [obj.source, obj.target].filter(Boolean).join('；');
+      }
+    } catch {
+      // not JSON — plain string, return as-is
+    }
+    return raw;
+  }
+
+  /**
    * Map database row to Relationship entity.
    */
   private mapRow(row: RelationshipRow): Relationship {
@@ -244,7 +261,8 @@ export class RelationshipRepository extends BaseRepository<Relationship, number>
 
     // Only add optional fields if they have values
     if (row.join_reason) relationship.joinReason = row.join_reason;
-    if (row.independent_goal) relationship.independentGoal = row.independent_goal;
+    if (row.independent_goal)
+      relationship.independentGoal = this.normalizeGoal(row.independent_goal);
     if (row.mc_needs) relationship.mcNeeds = row.mc_needs;
     if (row.evolution) relationship.evolution = row.evolution;
 

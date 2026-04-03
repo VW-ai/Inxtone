@@ -307,6 +307,7 @@ export interface Chapter extends Timestamps {
 
   title?: string;
   status: ChapterStatus;
+  sortOrder: number;
 
   // Outline
   outline?: ChapterOutline;

@@ -19,6 +19,7 @@ import type {
   CreateChapterInput,
   UpdateChapterInput,
   BuiltContext,
+  ContextItem,
 } from '@inxtone/core';
 
 // ===================================
@@ -45,7 +46,8 @@ export const versionKeys = {
 
 export const contextKeys = {
   all: ['context'] as const,
-  build: (chapterId: ChapterId) => [...contextKeys.all, chapterId] as const,
+  build: (chapterId: ChapterId, additionalIds?: string[]) =>
+    [...contextKeys.all, chapterId, additionalIds] as const,
 };
 
 // ===================================
@@ -182,12 +184,21 @@ export function useVersions(chapterId: ChapterId | null) {
 // Context Hook
 // ===================================
 
-/** Build AI context for a chapter */
-export function useBuildContext(chapterId: ChapterId | null) {
+/** Build AI context for a chapter, optionally with additional L5 items */
+export function useBuildContext(chapterId: ChapterId | null, additionalItems?: ContextItem[]) {
+  const additionalIds = additionalItems?.map((i) => i.id ?? '').filter(Boolean);
+
   return useQuery({
-    queryKey: contextKeys.build(chapterId!),
-    queryFn: () =>
-      apiPost<BuiltContext, { chapterId: ChapterId }>('/ai/context', { chapterId: chapterId! }),
+    queryKey: contextKeys.build(chapterId!, additionalIds),
+    queryFn: () => {
+      const body: { chapterId: ChapterId; additionalItems?: ContextItem[] } = {
+        chapterId: chapterId!,
+      };
+      if (additionalItems && additionalItems.length > 0) {
+        body.additionalItems = additionalItems;
+      }
+      return apiPost<BuiltContext, typeof body>('/ai/context', body);
+    },
     enabled: chapterId != null,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

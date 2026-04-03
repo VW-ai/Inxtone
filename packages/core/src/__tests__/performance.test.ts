@@ -219,13 +219,15 @@ describe('Performance Tests', () => {
 
   describe('Database Size and Indexing', () => {
     it('should verify FTS5 index is being used', () => {
-      // Query the characters_fts table directly
-      const result = db.queryOne<{ count: number }>(`SELECT COUNT(*) as count FROM characters_fts`);
+      // Query the unified search_index table
+      const result = db.queryOne<{ count: number }>(
+        `SELECT COUNT(*) as count FROM search_index WHERE entity_type = 'character'`
+      );
 
       expect(result).toBeDefined();
       expect(result!.count).toBeGreaterThan(120); // Including the 10 we created in batch test
 
-      console.log(`  ✓ FTS5 index has ${result!.count} entries`);
+      console.log(`  ✓ search_index has ${result!.count} character entries`);
     });
 
     it('should verify database file size is reasonable', () => {

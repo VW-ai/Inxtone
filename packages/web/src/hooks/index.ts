@@ -50,7 +50,9 @@ export {
 export {
   timelineKeys,
   useTimeline,
+  useTimelineEvent,
   useCreateTimelineEvent,
+  useUpdateTimelineEvent,
   useDeleteTimelineEvent,
 } from './useTimeline';
 
@@ -63,6 +65,7 @@ export {
   useForeshadowing,
   useForeshadowingItem,
   useCreateForeshadowing,
+  useUpdateForeshadowing,
   useAddForeshadowingHint,
   useResolveForeshadowing,
   useAbandonForeshadowing,
@@ -78,6 +81,20 @@ export {
   useUpdateHook,
   useDeleteHook,
 } from './useHooks';
+
+// Search
+export { searchKeys, useSearch } from './useSearch';
+
+// Keyboard Shortcuts
+export { useShortcut, getShortcutDefinitions, SHORTCUT_REFERENCE } from './useKeyboardShortcuts';
+export type { ShortcutDef } from './useKeyboardShortcuts';
+
+// Entity Extraction
+export { useExtractEntities } from './useEntityExtraction';
+
+// Chapter Setup Assist
+export { setupKeys, useChapterSetup } from './useChapterSetup';
+export type { SetupSuggestion } from './useChapterSetup';
 
 // Chapters & Volumes
 export {
@@ -95,3 +112,7 @@ export {
   useVersions,
   useBuildContext,
 } from './useChapters';
+
+// Intake
+export { useDecompose, useCommitEntities } from './useIntake';
+export { useIntakeImport } from './useIntakeImport';

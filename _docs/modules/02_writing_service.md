@@ -1,4 +1,4 @@
-> ⚠️ **此文件为旧版副本**。最新版本请参考 `Meta/Modules/02_writing_service.md`。
+> ⚠️ **此文件为旧版副本**。最新版本请参考 `spec/Modules/02_writing_service.md`。
 
 # WritingService 模块设计
 

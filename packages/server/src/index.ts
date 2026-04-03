@@ -8,7 +8,13 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { VERSION } from '@inxtone/core';
-import type { IStoryBibleService, IAIService, IWritingService } from '@inxtone/core';
+import type {
+  IStoryBibleService,
+  IAIService,
+  IWritingService,
+  ISearchService,
+  IExportService,
+} from '@inxtone/core';
 import {
   Database,
   CharacterRepository,
@@ -22,7 +28,16 @@ import {
   HookRepository,
   WritingRepository,
 } from '@inxtone/core/db';
-import { EventBus, StoryBibleService, AIService, WritingService } from '@inxtone/core/services';
+import {
+  EventBus,
+  StoryBibleService,
+  AIService,
+  WritingService,
+  SearchService,
+  ChapterSetupAssist,
+  ExportService,
+  IntakeService,
+} from '@inxtone/core/services';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -41,6 +56,10 @@ export interface ServerOptions {
   storyBibleService?: IStoryBibleService;
   aiService?: IAIService;
   writingService?: IWritingService;
+  searchService?: ISearchService;
+  exportService?: IExportService;
+  setupAssist?: ChapterSetupAssist;
+  intakeService?: IntakeService;
 
   // Database instance for seed routes
   db?: InstanceType<typeof Database>;
@@ -95,14 +114,18 @@ export async function createServer(options: ServerOptions = {}): Promise<Fastify
         foreshadowing: '/api/foreshadowing',
         hooks: '/api/hooks',
         ai: '/api/ai',
+        search: '/api/search',
         // Writing API
         volumes: '/api/volumes',
         chapters: '/api/chapters',
         versions: '/api/versions',
         stats: '/api/stats',
+        // Export API
+        export: '/api/export',
+        // Smart Intake API
+        intake: '/api/intake',
         // Future endpoints
         // quality: '/api/quality',
-        // export: '/api/export',
       },
     };
   });
@@ -117,6 +140,18 @@ export async function createServer(options: ServerOptions = {}): Promise<Fastify
     }
     if (options.writingService) {
       deps.writingService = options.writingService;
+    }
+    if (options.searchService) {
+      deps.searchService = options.searchService;
+    }
+    if (options.exportService) {
+      deps.exportService = options.exportService;
+    }
+    if (options.setupAssist) {
+      deps.setupAssist = options.setupAssist;
+    }
+    if (options.intakeService) {
+      deps.intakeService = options.intakeService;
     }
     if (options.db) {
       deps.db = options.db;
@@ -182,6 +217,10 @@ function createServices(options: {
   storyBibleService: IStoryBibleService;
   aiService: IAIService;
   writingService: IWritingService;
+  searchService: ISearchService;
+  exportService: IExportService;
+  setupAssist: ChapterSetupAssist;
+  intakeService: IntakeService;
   db: InstanceType<typeof Database>;
 } {
   // Use provided path or default to ~/.inxtone/data.db
@@ -246,6 +285,25 @@ function createServices(options: {
     { geminiApiKey: options.geminiApiKey }
   );
 
+  // Create IntakeService
+  const intakeOpts = options.geminiApiKey ? { geminiApiKey: options.geminiApiKey } : undefined;
+  const intakeService = new IntakeService(
+    {
+      db,
+      characterRepo,
+      relationshipRepo,
+      locationRepo,
+      factionRepo,
+      arcRepo,
+      foreshadowingRepo,
+      hookRepo,
+      worldRepo,
+      timelineEventRepo,
+      eventBus,
+    },
+    intakeOpts
+  );
+
   // Create WritingService
   const writingService = new WritingService({
     db,
@@ -257,7 +315,40 @@ function createServices(options: {
     eventBus,
   });
 
-  return { storyBibleService, aiService, writingService, db };
+  // Create ExportService
+  const exportService = new ExportService({
+    writingRepo,
+    characterRepo,
+    relationshipRepo,
+    worldRepo,
+    locationRepo,
+    factionRepo,
+    arcRepo,
+    foreshadowingRepo,
+    hookRepo,
+  });
+
+  // Create SearchService
+  const searchService = new SearchService(db);
+
+  // Create ChapterSetupAssist
+  const setupAssist = new ChapterSetupAssist({
+    writingRepo,
+    characterRepo,
+    locationRepo,
+    foreshadowingRepo,
+  });
+
+  return {
+    storyBibleService,
+    aiService,
+    writingService,
+    searchService,
+    exportService,
+    setupAssist,
+    intakeService,
+    db,
+  };
 }
 
 /**
@@ -285,10 +376,16 @@ if (isMainModule) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
 
   // Create all services with shared infrastructure
-  const { storyBibleService, aiService, writingService, db } = createServices({
-    dbPath,
-    geminiApiKey,
-  });
+  const {
+    storyBibleService,
+    aiService,
+    writingService,
+    searchService,
+    exportService,
+    setupAssist,
+    intakeService,
+    db,
+  } = createServices({ dbPath, geminiApiKey });
 
   console.log('Starting Inxtone server...');
   console.log(`Database: ${dbPath ?? path.join(os.homedir(), '.inxtone', 'data.db')}`);
@@ -298,7 +395,17 @@ if (isMainModule) {
     console.log('AI Service: No server key — clients provide key via BYOK');
   }
 
-  startServer({ port, storyBibleService, aiService, writingService, db })
+  startServer({
+    port,
+    storyBibleService,
+    aiService,
+    writingService,
+    searchService,
+    exportService,
+    setupAssist,
+    intakeService,
+    db,
+  })
     .then(() => {
       console.log(`Server running at http://localhost:${port}`);
       console.log(`API available at http://localhost:${port}/api`);

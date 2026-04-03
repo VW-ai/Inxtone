@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Button, Badge, EditableField, EditableList } from '../../components/ui';
+import { Button, Badge, EditableField, EditableList, LoadingSpinner } from '../../components/ui';
 import { useCharacter, useUpdateCharacter } from '../../hooks/useCharacters';
 import type { CharacterId, UpdateCharacterInput } from '@inxtone/core';
 import styles from './CharacterDetail.module.css';
@@ -45,10 +45,7 @@ export function CharacterDetail({
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span>Loading character...</span>
-        </div>
+        <LoadingSpinner text="Loading character..." />
       </div>
     );
   }

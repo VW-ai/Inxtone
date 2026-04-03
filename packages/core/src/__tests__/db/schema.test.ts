@@ -413,27 +413,23 @@ describe('Database Schema', () => {
   // ============================================
 
   describe('Full Text Search', () => {
-    it('should have chapters_fts virtual table', () => {
-      // Virtual tables show up differently, check with a query
+    it('should have unified search_index virtual table', () => {
       const tables = db.query<{ name: string }>(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%fts%'"
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%search%'"
       );
       const tableNames = tables.map((t) => t.name);
 
-      expect(tableNames).toContain('chapters_fts');
+      expect(tableNames).toContain('search_index');
     });
 
-    it('should have characters_fts virtual table', () => {
+    it('should not have legacy FTS tables', () => {
       const tables = db.query<{ name: string }>(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%fts%'"
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_fts'"
       );
-      const tableNames = tables.map((t) => t.name);
-
-      expect(tableNames).toContain('characters_fts');
+      expect(tables.length).toBe(0);
     });
 
     it('should index chapter content for search', () => {
-      // Insert a chapter
       db.run('INSERT INTO chapters (id, title, content, status) VALUES (?, ?, ?, ?)', [
         100,
         'The Beginning',
@@ -441,21 +437,20 @@ describe('Database Schema', () => {
         'draft',
       ]);
 
-      // Search using FTS by title
-      const results = db.query<{ rowid: number; title: string }>(
-        "SELECT rowid, title FROM chapters_fts WHERE chapters_fts MATCH 'Beginning'"
+      // Search by title
+      const results = db.query<{ entity_id: string; title: string }>(
+        "SELECT entity_id, title FROM search_index WHERE entity_type = 'chapter' AND search_index MATCH 'Beginning'"
       );
       expect(results.length).toBeGreaterThan(0);
 
-      // Search by content
-      const contentResults = db.query<{ rowid: number }>(
-        "SELECT rowid FROM chapters_fts WHERE chapters_fts MATCH 'mountain'"
+      // Search by content (body column)
+      const contentResults = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'chapter' AND search_index MATCH 'mountain'"
       );
       expect(contentResults.length).toBeGreaterThan(0);
     });
 
     it('should index character name and appearance for search', () => {
-      // Insert a character
       db.run('INSERT INTO characters (id, name, role, appearance) VALUES (?, ?, ?, ?)', [
         'C100',
         '云天河',
@@ -463,23 +458,20 @@ describe('Database Schema', () => {
         '身穿青色道袍，面容俊朗',
       ]);
 
-      // Search by name using FTS
-      const resultsByName = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '云天河'"
+      // Search by name
+      const resultsByName = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '云天河'"
       );
       expect(resultsByName.length).toBeGreaterThan(0);
 
-      // Search by appearance using FTS
-      // Note: FTS5 default tokenizer splits CJK text by punctuation, not individual words
-      // '身穿青色道袍' is a single token, so we match the full segment
-      const resultsByAppearance = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '身穿青色道袍'"
+      // Search by appearance
+      const resultsByAppearance = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '身穿青色道袍'"
       );
       expect(resultsByAppearance.length).toBeGreaterThan(0);
     });
 
-    it('should update characters_fts when character is updated', () => {
-      // Insert a character
+    it('should update search_index when character is updated', () => {
       db.run('INSERT INTO characters (id, name, role, appearance) VALUES (?, ?, ?, ?)', [
         'C101',
         '李青云',
@@ -488,8 +480,8 @@ describe('Database Schema', () => {
       ]);
 
       // Verify searchable
-      let results = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '李青云'"
+      let results = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '李青云'"
       );
       expect(results.length).toBe(1);
 
@@ -497,20 +489,19 @@ describe('Database Schema', () => {
       db.run('UPDATE characters SET name = ? WHERE id = ?', ['李青霄', 'C101']);
 
       // Old name should not be found
-      results = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '李青云'"
+      results = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '李青云'"
       );
       expect(results.length).toBe(0);
 
       // New name should be found
-      results = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '李青霄'"
+      results = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '李青霄'"
       );
       expect(results.length).toBe(1);
     });
 
-    it('should remove from characters_fts when character is deleted', () => {
-      // Insert a character
+    it('should remove from search_index when character is deleted', () => {
       db.run('INSERT INTO characters (id, name, role) VALUES (?, ?, ?)', [
         'C102',
         '张无忌',
@@ -518,8 +509,8 @@ describe('Database Schema', () => {
       ]);
 
       // Verify searchable
-      let results = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '张无忌'"
+      let results = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '张无忌'"
       );
       expect(results.length).toBe(1);
 
@@ -527,10 +518,60 @@ describe('Database Schema', () => {
       db.run('DELETE FROM characters WHERE id = ?', ['C102']);
 
       // Should no longer be found
-      results = db.query<{ name: string }>(
-        "SELECT name FROM characters_fts WHERE characters_fts MATCH '张无忌'"
+      results = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'character' AND search_index MATCH '张无忌'"
       );
       expect(results.length).toBe(0);
+    });
+
+    it('should index locations, factions, arcs, foreshadowing', () => {
+      db.run('INSERT INTO locations (id, name, significance, atmosphere) VALUES (?, ?, ?, ?)', [
+        'L100',
+        'Crystal Palace',
+        'Ancient dragon lair',
+        'Mystical and cold',
+      ]);
+      db.run('INSERT INTO factions (id, name, internal_conflict) VALUES (?, ?, ?)', [
+        'F100',
+        'Shadow Guild',
+        'Power struggle between elders',
+      ]);
+      db.run('INSERT INTO arcs (id, name, type, status) VALUES (?, ?, ?, ?)', [
+        'ARC100',
+        'The Awakening',
+        'main',
+        'planned',
+      ]);
+      db.run('INSERT INTO foreshadowing (id, content, planted_text, status) VALUES (?, ?, ?, ?)', [
+        'FS100',
+        'Mysterious pendant glows',
+        'The pendant hummed with power',
+        'active',
+      ]);
+
+      // Search locations
+      const locResults = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'location' AND search_index MATCH 'Crystal'"
+      );
+      expect(locResults.length).toBe(1);
+
+      // Search factions
+      const facResults = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'faction' AND search_index MATCH 'Shadow'"
+      );
+      expect(facResults.length).toBe(1);
+
+      // Search arcs
+      const arcResults = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'arc' AND search_index MATCH 'Awakening'"
+      );
+      expect(arcResults.length).toBe(1);
+
+      // Search foreshadowing
+      const fsResults = db.query<{ entity_id: string }>(
+        "SELECT entity_id FROM search_index WHERE entity_type = 'foreshadowing' AND search_index MATCH 'pendant'"
+      );
+      expect(fsResults.length).toBe(1);
     });
   });
 

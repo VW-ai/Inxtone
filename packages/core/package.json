@@ -38,6 +38,8 @@
   "dependencies": {
     "@google/genai": "^1.0.0",
     "better-sqlite3": "^11.0.0",
+    "docx": "^9.5.2",
+    "mammoth": "^1.11.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

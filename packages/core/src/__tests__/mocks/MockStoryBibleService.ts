@@ -11,8 +11,10 @@ import type {
   UpdateCharacterInput,
   CreateRelationshipInput,
   CreateForeshadowingInput,
+  UpdateForeshadowingInput,
   CreateArcInput,
   CreateHookInput,
+  UpdateTimelineEventInput,
   CharacterWithRelations,
 } from '../../types/services.js';
 
@@ -335,6 +337,20 @@ export class MockStoryBibleService implements IStoryBibleService {
     return Array.from(this.timelineEvents.values());
   }
 
+  async updateTimelineEvent(id: number, input: UpdateTimelineEventInput): Promise<TimelineEvent> {
+    const event = this.timelineEvents.get(id);
+    if (!event) {
+      throw new Error(`Timeline event not found: ${id}`);
+    }
+
+    const updated: TimelineEvent = { ...event };
+    if (input.eventDate !== undefined) updated.eventDate = input.eventDate;
+    if (input.description !== undefined) updated.description = input.description;
+
+    this.timelineEvents.set(id, updated);
+    return updated;
+  }
+
   async deleteTimelineEvent(id: number): Promise<void> {
     this.timelineEvents.delete(id);
   }
@@ -473,6 +489,28 @@ export class MockStoryBibleService implements IStoryBibleService {
     };
     this.foreshadowing.set(id, updated);
     return updated;
+  }
+
+  async updateForeshadowing(
+    id: ForeshadowingId,
+    input: UpdateForeshadowingInput
+  ): Promise<Foreshadowing> {
+    const fs = this.foreshadowing.get(id);
+    if (!fs) {
+      throw new Error(`Foreshadowing not found: ${id}`);
+    }
+
+    const updated: Foreshadowing = {
+      ...fs,
+      ...input,
+      updatedAt: this.now(),
+    };
+    this.foreshadowing.set(id, updated);
+    return updated;
+  }
+
+  async deleteForeshadowing(id: ForeshadowingId): Promise<void> {
+    this.foreshadowing.delete(id);
   }
 
   // === Hooks ===

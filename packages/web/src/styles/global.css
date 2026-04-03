@@ -149,3 +149,11 @@ pre {
 .font-mono {
   font-family: var(--font-mono);
 }
+
+/* === Shared Animations === */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

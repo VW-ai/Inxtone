@@ -10,7 +10,7 @@
  *
  * Both return BuiltContext with same token budget/truncation as ChapterContextBuilder.
  *
- * @see Meta/Decisions/ADR-0002-ai-context-injection-strategy.md
+ * @see spec/Decisions/ADR-0002-ai-context-injection-strategy.md
  */
 
 import type { ContextItem, BuiltContext } from '../types/services.js';

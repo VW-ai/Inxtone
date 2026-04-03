@@ -1,18 +1,26 @@
 /**
  * FactionList Component
  *
- * Card grid with split layout: cards on left, detail panel on right.
+ * Card grid with split layout: cards on left, detail/create panel on right.
  */
 
-import React from 'react';
-import { Button, Card, EmptyState, Badge } from '../../components/ui';
-import { useFactions, useDeleteFaction, useCharacters } from '../../hooks';
-import { useSelectedId, useStoryBibleActions } from '../../stores/useStoryBibleStore';
+import React, { useState } from 'react';
+import {
+  Button,
+  Card,
+  EmptyState,
+  Badge,
+  EditableField,
+  LoadingSpinner,
+} from '../../components/ui';
+import { useFactions, useCreateFaction, useDeleteFaction, useCharacters } from '../../hooks';
+import { useSelectedId, useFormMode, useStoryBibleActions } from '../../stores/useStoryBibleStore';
 import { FactionDetail } from './FactionDetail';
 import type { Faction, CharacterId, FactionId } from '@inxtone/core';
 import styles from './shared.module.css';
 import cardStyles from './FactionList.module.css';
 import layoutStyles from './CharacterList.module.css';
+import detailStyles from './CharacterDetail.module.css';
 
 const STANCE_VARIANTS: Record<
   NonNullable<Faction['stanceToMC']>,
@@ -23,11 +31,89 @@ const STANCE_VARIANTS: Record<
   hostile: 'danger',
 };
 
+const STANCE_OPTIONS = [
+  { label: '(None)', value: '' },
+  { label: 'Friendly', value: 'friendly' },
+  { label: 'Neutral', value: 'neutral' },
+  { label: 'Hostile', value: 'hostile' },
+];
+
+function FactionCreatePanel({
+  onCreated,
+}: {
+  onCreated: (id: FactionId) => void;
+}): React.ReactElement {
+  const createFaction = useCreateFaction();
+  const { closeForm } = useStoryBibleActions();
+  const [name, setName] = useState('');
+  const [type, setType] = useState('');
+  const [stanceToMC, setStanceToMC] = useState('');
+
+  const canCreate = name.trim().length > 0;
+
+  const handleCreate = () => {
+    if (!canCreate) return;
+    const input: { name: string; type?: string; stanceToMC?: 'friendly' | 'neutral' | 'hostile' } =
+      {
+        name: name.trim(),
+      };
+    if (type.trim()) input.type = type.trim();
+    if (stanceToMC) input.stanceToMC = stanceToMC as 'friendly' | 'neutral' | 'hostile';
+    createFaction.mutate(input, {
+      onSuccess: (faction) => onCreated(faction.id),
+    });
+  };
+
+  return (
+    <div className={detailStyles.container}>
+      <div className={detailStyles.header}>
+        <div className={detailStyles.headerTop}>
+          <EditableField value={name} onSave={setName} heading placeholder="Faction name..." />
+        </div>
+        <div className={detailStyles.meta}>
+          <EditableField value={type} onSave={setType} placeholder="Type (e.g. sect, guild)..." />
+          <EditableField
+            value={stanceToMC}
+            onSave={setStanceToMC}
+            as="select"
+            options={STANCE_OPTIONS}
+          />
+        </div>
+      </div>
+      <div className={detailStyles.content}>
+        <p
+          style={{
+            fontSize: 'var(--font-sm)',
+            color: 'var(--color-text-muted)',
+            fontStyle: 'italic',
+          }}
+        >
+          Create the faction first, then add goals, resources, and leader in the detail panel.
+        </p>
+      </div>
+      <div className={detailStyles.actions}>
+        <Button variant="ghost" size="md" onClick={closeForm}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleCreate}
+          disabled={!canCreate || createFaction.isPending}
+        >
+          {createFaction.isPending ? 'Creating...' : 'Create Faction'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function FactionList(): React.ReactElement {
   const { data: factions, isLoading } = useFactions();
   const { data: characters } = useCharacters();
   const deleteFaction = useDeleteFaction();
   const selectedId = useSelectedId();
+  const formMode = useFormMode();
   const { select, openForm } = useStoryBibleActions();
 
   const charMap = React.useMemo(() => {
@@ -36,12 +122,7 @@ export function FactionList(): React.ReactElement {
   }, [characters]);
 
   if (isLoading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <span>Loading factions...</span>
-      </div>
-    );
+    return <LoadingSpinner text="Loading factions..." />;
   }
 
   const handleCreate = () => {
@@ -59,15 +140,31 @@ export function FactionList(): React.ReactElement {
     }
   };
 
+  const handleCreated = (id: FactionId) => {
+    select(id);
+  };
+
   if (!factions || factions.length === 0) {
     return (
-      <EmptyState
-        title="No factions yet"
-        description="Add factions to create political intrigue and alliances."
-        action={{ label: 'Add Faction', onClick: handleCreate }}
-      />
+      <div className={layoutStyles.layout}>
+        <div className={layoutStyles.listPanel}>
+          <EmptyState
+            title="No factions yet"
+            description="Add factions to create political intrigue and alliances."
+            action={{ label: 'Add Faction', onClick: handleCreate }}
+          />
+        </div>
+        {formMode === 'create' && (
+          <div className={layoutStyles.detailPanel}>
+            <FactionCreatePanel onCreated={handleCreated} />
+          </div>
+        )}
+      </div>
     );
   }
+
+  const showDetail = selectedId && formMode !== 'create';
+  const showCreate = formMode === 'create';
 
   return (
     <div className={layoutStyles.layout}>
@@ -132,7 +229,12 @@ export function FactionList(): React.ReactElement {
         </div>
       </div>
 
-      {selectedId && (
+      {showCreate && (
+        <div className={layoutStyles.detailPanel}>
+          <FactionCreatePanel onCreated={handleCreated} />
+        </div>
+      )}
+      {showDetail && (
         <div className={layoutStyles.detailPanel}>
           <FactionDetail factionId={selectedId as FactionId} onDelete={handleDelete} />
         </div>

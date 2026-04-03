@@ -89,7 +89,7 @@
 }
 
 .strengthMid {
-  background: var(--color-warning, #d97706);
+  background: var(--color-warning);
 }
 
 .strengthHigh {

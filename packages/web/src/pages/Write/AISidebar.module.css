@@ -34,6 +34,13 @@
   gap: var(--space-sm);
 }
 
+.btnIcon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  display: block;
+}
+
 .prompt {
   /* Textarea fills width by default */
 }

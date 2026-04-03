@@ -7,7 +7,7 @@
  * SSE endpoints: POST /continue, /dialogue, /describe, /brainstorm, /ask, /complete
  * JSON endpoints: POST /context, GET /providers
  *
- * @see Meta/Modules/03_ai_service.md
+ * @see spec/Modules/03_ai_service.md
  */
 
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
@@ -94,6 +94,12 @@ const completeSchema = z.object({
 const buildContextSchema = z.object({
   chapterId: z.coerce.number().int().positive(),
   additionalItems: z.array(contextItemSchema).optional(),
+});
+
+const extractEntitiesSchema = z.object({
+  chapterId: z.coerce.number().int().positive(),
+  content: z.string().min(1),
+  options: aiGenerationOptionsSchema,
 });
 
 /**
@@ -294,6 +300,21 @@ export const aiRoutes = (deps: RouteDeps): FastifyPluginAsync => {
       const result = await aiService.buildContext(
         body.chapterId,
         body.additionalItems as ContextItem[] | undefined
+      );
+      return success(result);
+    });
+
+    /**
+     * POST /extract-entities - Extract entities from content (JSON)
+     */
+    fastify.post('/extract-entities', async (request, reply) => {
+      const body = validateBody(request.body, extractEntitiesSchema, reply);
+      if (!body) return reply;
+      injectApiKey(request, aiService);
+      const result = await aiService.extractEntities(
+        body.chapterId,
+        body.content,
+        body.options as AIGenerationOptions | undefined
       );
       return success(result);
     });

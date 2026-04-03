@@ -27,21 +27,6 @@
   font-size: var(--font-sm);
 }
 
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Header */
 .header {
   padding: var(--space-6);

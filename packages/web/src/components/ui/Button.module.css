@@ -70,17 +70,17 @@
 
 .ghost:hover:not(:disabled) {
   color: var(--color-accent);
-  background: rgba(201, 168, 108, 0.1);
+  background: var(--color-accent-dim);
 }
 
 .danger {
   background: transparent;
-  color: #ef4444;
-  border-color: #ef4444;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .danger:hover:not(:disabled) {
-  background: #ef4444;
+  background: var(--color-danger);
   color: var(--white);
 }
 
@@ -105,10 +105,4 @@
 
 .hiddenText {
   visibility: hidden;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }

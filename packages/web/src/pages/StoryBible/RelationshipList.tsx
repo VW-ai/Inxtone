@@ -2,17 +2,41 @@
  * RelationshipList Component
  *
  * Split layout: card grid (left) + RelationshipDetail panel (right).
- * Follows CharacterList pattern.
+ * "Add Relationship" opens a create panel in the detail area.
+ * Follows CharacterList / HookList pattern.
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
-import { Button, Card, EmptyState, Badge, ConfirmDialog } from '../../components/ui';
-import { useRelationships, useCharacters, useDeleteRelationship } from '../../hooks';
-import { useSelectedId, useStoryBibleActions } from '../../stores/useStoryBibleStore';
+import {
+  Button,
+  Card,
+  EmptyState,
+  Badge,
+  EditableField,
+  ConfirmDialog,
+  LoadingSpinner,
+} from '../../components/ui';
+import {
+  useRelationships,
+  useCharacters,
+  useDeleteRelationship,
+  useCreateRelationship,
+} from '../../hooks';
+import { useSelectedId, useFormMode, useStoryBibleActions } from '../../stores/useStoryBibleStore';
 import { RelationshipDetail } from './RelationshipDetail';
 import type { Relationship, CharacterId } from '@inxtone/core';
 import styles from './shared.module.css';
 import layoutStyles from './CharacterList.module.css';
+import detailStyles from './CharacterDetail.module.css';
+
+const TYPE_OPTIONS = [
+  { label: 'Companion', value: 'companion' },
+  { label: 'Rival', value: 'rival' },
+  { label: 'Enemy', value: 'enemy' },
+  { label: 'Mentor', value: 'mentor' },
+  { label: 'Confidant', value: 'confidant' },
+  { label: 'Lover', value: 'lover' },
+];
 
 function TypeBadge({ type }: { type: Relationship['type'] }): React.ReactElement {
   const variants: Record<
@@ -29,11 +53,116 @@ function TypeBadge({ type }: { type: Relationship['type'] }): React.ReactElement
   return <Badge variant={variants[type]}>{type}</Badge>;
 }
 
+/** Inline create panel for new relationships */
+function RelationshipCreatePanel({
+  onCreated,
+}: {
+  onCreated: (id: number) => void;
+}): React.ReactElement {
+  const createRelationship = useCreateRelationship();
+  const { closeForm } = useStoryBibleActions();
+  const { data: characters } = useCharacters();
+
+  const [sourceId, setSourceId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const [relType, setRelType] = useState('');
+  const [joinReason, setJoinReason] = useState('');
+
+  const charOptions = useMemo(() => {
+    if (!characters) return [];
+    return characters.map((c) => ({ label: c.name, value: c.id }));
+  }, [characters]);
+
+  const canCreate = sourceId !== '' && targetId !== '' && relType !== '';
+
+  const handleCreate = () => {
+    if (!canCreate) return;
+    const input: {
+      sourceId: CharacterId;
+      targetId: CharacterId;
+      type: 'companion' | 'rival' | 'enemy' | 'mentor' | 'confidant' | 'lover';
+      joinReason?: string;
+    } = {
+      sourceId: sourceId,
+      targetId: targetId,
+      type: relType as 'companion' | 'rival' | 'enemy' | 'mentor' | 'confidant' | 'lover',
+    };
+    if (joinReason.trim()) input.joinReason = joinReason.trim();
+    createRelationship.mutate(input, {
+      onSuccess: (rel) => {
+        onCreated(rel.id);
+      },
+    });
+  };
+
+  return (
+    <div className={detailStyles.container}>
+      <div className={detailStyles.header}>
+        <div className={detailStyles.headerTop}>
+          <EditableField
+            label="Source Character"
+            value={sourceId}
+            onSave={(v) => setSourceId(v)}
+            as="select"
+            options={charOptions}
+            placeholder="Select source..."
+          />
+          <EditableField
+            label="Target Character"
+            value={targetId}
+            onSave={(v) => setTargetId(v)}
+            as="select"
+            options={charOptions}
+            placeholder="Select target..."
+          />
+        </div>
+        <div className={detailStyles.headerTop}>
+          <EditableField
+            label="Type"
+            value={relType}
+            onSave={(v) => setRelType(v)}
+            as="select"
+            options={TYPE_OPTIONS}
+            placeholder="Select type..."
+          />
+        </div>
+      </div>
+
+      <div className={detailStyles.content}>
+        <section className={detailStyles.section}>
+          <h3 className={detailStyles.sectionTitle}>Why They Joined</h3>
+          <EditableField
+            value={joinReason}
+            onSave={setJoinReason}
+            as="textarea"
+            placeholder="Why did they join forces? (optional)"
+          />
+        </section>
+      </div>
+
+      <div className={detailStyles.actions}>
+        <Button variant="ghost" size="md" onClick={closeForm}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleCreate}
+          disabled={!canCreate || createRelationship.isPending}
+        >
+          {createRelationship.isPending ? 'Creating...' : 'Create Relationship'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function RelationshipList(): React.ReactElement {
   const { data: relationships, isLoading, error } = useRelationships();
   const { data: characters } = useCharacters();
   const deleteRelationship = useDeleteRelationship();
   const selectedId = useSelectedId();
+  const formMode = useFormMode();
   const { openForm, select } = useStoryBibleActions();
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
@@ -63,13 +192,12 @@ export function RelationshipList(): React.ReactElement {
     }
   }, [deleteTarget, deleteRelationship, selectedId, select]);
 
+  const handleCreated = (id: number) => {
+    select(id);
+  };
+
   if (isLoading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <span>Loading relationships...</span>
-      </div>
-    );
+    return <LoadingSpinner text="Loading relationships..." />;
   }
 
   if (error) {
@@ -90,13 +218,20 @@ export function RelationshipList(): React.ReactElement {
 
   if (!hasRelationships) {
     return (
-      <>
-        <EmptyState
-          title="No relationships yet"
-          description="Define relationships between your characters to build a rich social network."
-          action={{ label: 'Add Relationship', onClick: handleCreate }}
-        />
-      </>
+      <div className={layoutStyles.layout}>
+        <div className={layoutStyles.listPanel}>
+          <EmptyState
+            title="No relationships yet"
+            description="Define relationships between your characters to build a rich social network."
+            action={{ label: 'Add Relationship', onClick: handleCreate }}
+          />
+        </div>
+        {formMode === 'create' && (
+          <div className={layoutStyles.detailPanel}>
+            <RelationshipCreatePanel onCreated={handleCreated} />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -111,6 +246,9 @@ export function RelationshipList(): React.ReactElement {
   const topTypes = Object.entries(typeCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
+
+  const showDetail = selectedId != null && formMode !== 'create';
+  const showCreate = formMode === 'create';
 
   return (
     <>
@@ -176,7 +314,12 @@ export function RelationshipList(): React.ReactElement {
           </div>
         </div>
 
-        {selectedId != null && (
+        {showCreate && (
+          <div className={layoutStyles.detailPanel}>
+            <RelationshipCreatePanel onCreated={handleCreated} />
+          </div>
+        )}
+        {showDetail && (
           <div className={layoutStyles.detailPanel}>
             <RelationshipDetail relationshipId={selectedId as number} onDelete={handleDelete} />
           </div>

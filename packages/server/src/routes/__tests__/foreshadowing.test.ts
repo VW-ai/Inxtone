@@ -162,6 +162,125 @@ describe('Foreshadowing API Routes', () => {
   });
 
   // ============================================
+  // PATCH /api/foreshadowing/:id
+  // ============================================
+
+  describe('PATCH /api/foreshadowing/:id', () => {
+    it('should update content and return 200', async () => {
+      // Create foreshadowing first
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '神秘宝剑' },
+      });
+
+      const res = await ctx.server.inject({
+        method: 'PATCH',
+        url: '/api/foreshadowing/FS001',
+        payload: { content: '修改后的伏笔' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.data.content).toBe('修改后的伏笔');
+      expect(body.data.id).toBe('FS001');
+    });
+
+    it('should update term and return 200', async () => {
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '神秘宝剑', term: 'short' },
+      });
+
+      const res = await ctx.server.inject({
+        method: 'PATCH',
+        url: '/api/foreshadowing/FS001',
+        payload: { term: 'long' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.data.term).toBe('long');
+    });
+
+    it('should reflect update in subsequent GET', async () => {
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '神秘宝剑' },
+      });
+
+      await ctx.server.inject({
+        method: 'PATCH',
+        url: '/api/foreshadowing/FS001',
+        payload: { content: '修改后的伏笔' },
+      });
+
+      const res = await ctx.server.inject({
+        method: 'GET',
+        url: '/api/foreshadowing/FS001',
+      });
+
+      const body = res.json();
+      expect(body.data.content).toBe('修改后的伏笔');
+    });
+  });
+
+  // ============================================
+  // DELETE /api/foreshadowing/:id
+  // ============================================
+
+  describe('DELETE /api/foreshadowing/:id', () => {
+    it('should delete foreshadowing and return 200 with deleted: true', async () => {
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '神秘宝剑' },
+      });
+
+      const res = await ctx.server.inject({
+        method: 'DELETE',
+        url: '/api/foreshadowing/FS001',
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual({ deleted: true });
+    });
+
+    it('should reflect deletion in subsequent GET', async () => {
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '神秘宝剑' },
+      });
+      await ctx.server.inject({
+        method: 'POST',
+        url: '/api/foreshadowing',
+        payload: { content: '暗线伏笔' },
+      });
+
+      await ctx.server.inject({
+        method: 'DELETE',
+        url: '/api/foreshadowing/FS001',
+      });
+
+      const res = await ctx.server.inject({
+        method: 'GET',
+        url: '/api/foreshadowing',
+      });
+
+      const body = res.json();
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].id).toBe('FS002');
+    });
+  });
+
+  // ============================================
   // POST /api/foreshadowing/:id/hint
   // ============================================
 

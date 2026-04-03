@@ -1,0 +1,7 @@
+#!/bin/sh
+# Auto-pull spec submodule after checkout
+# Ensures spec/ stays in sync when switching branches
+
+if [ -f .gitmodules ]; then
+  git submodule update --init --recursive 2>/dev/null
+fi

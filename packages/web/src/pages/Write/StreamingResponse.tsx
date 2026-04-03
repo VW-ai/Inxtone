@@ -12,10 +12,13 @@ export function StreamingResponse(): React.ReactElement | null {
   const response = useAIResponse();
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom during streaming
+  // Auto-scroll to bottom during streaming (only when near bottom)
   React.useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    const el = containerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 80) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [response]);
 

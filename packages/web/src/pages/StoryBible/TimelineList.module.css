@@ -38,7 +38,7 @@
   border-radius: 50%;
   background: var(--color-gold);
   border: 2px solid var(--color-bg);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .dateBadge {

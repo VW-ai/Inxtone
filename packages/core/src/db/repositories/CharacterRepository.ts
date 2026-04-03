@@ -19,6 +19,7 @@ import type {
   ChapterId,
 } from '../../types/entities.js';
 import type { CreateCharacterInput, UpdateCharacterInput } from '../../types/services.js';
+import { sanitizeFtsQuery } from '../../utils/ftsQuery.js';
 
 /** Raw database row type */
 interface CharacterRow {
@@ -188,17 +189,38 @@ export class CharacterRepository extends BaseRepository<Character, CharacterId> 
    */
   search(query: string): Character[] {
     // Escape special FTS5 characters and format query
-    const sanitizedQuery = this.sanitizeFtsQuery(query);
+    const sanitizedQuery = sanitizeFtsQuery(query);
 
-    const rows = this.db.query<CharacterRow>(
+    let rows = this.db.query<CharacterRow>(
       `SELECT c.* FROM characters c
-       JOIN characters_fts fts ON c.rowid = fts.rowid
-       WHERE characters_fts MATCH ?
-       ORDER BY rank`,
+       WHERE c.id IN (
+         SELECT entity_id FROM search_index
+         WHERE entity_type = 'character' AND search_index MATCH ?
+       )`,
       [sanitizedQuery]
     );
 
+    // FTS5 fallback: For pure CJK queries, fall back to LIKE search for better UX
+    if (rows.length === 0 && this.isPureCJKQuery(query)) {
+      const pattern = `%${query.trim()}%`;
+      rows = this.db.query<CharacterRow>(
+        `SELECT * FROM characters WHERE name LIKE ? OR appearance LIKE ? ORDER BY name`,
+        [pattern, pattern]
+      );
+    }
+
     return rows.map((row) => this.mapRow(row));
+  }
+
+  /**
+   * Check if query contains only CJK characters (no spaces, no ASCII).
+   */
+  private isPureCJKQuery(query: string): boolean {
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.includes(' ')) return false;
+    // CJK Unified Ideographs: 4E00-9FFF (plus common CJK punctuation)
+    const cjkRegex = /^[\u4E00-\u9FFF\u3000-\u303F]+$/;
+    return cjkRegex.test(trimmed);
   }
 
   /**
@@ -224,25 +246,6 @@ export class CharacterRepository extends BaseRepository<Character, CharacterId> 
       [chapterId]
     );
     return rows.map((row) => this.mapRow(row));
-  }
-
-  /**
-   * Sanitize query for FTS5.
-   */
-  private sanitizeFtsQuery(query: string): string {
-    // Remove special FTS5 operators for simple searches
-    // For advanced users, we could allow these
-    const sanitized = query
-      .replace(/['"]/g, '') // Remove quotes
-      .replace(/[*^]/g, '') // Remove special operators
-      .trim();
-
-    // Add prefix matching for partial word matches
-    if (sanitized && !sanitized.includes(' ')) {
-      return `${sanitized}*`;
-    }
-
-    return sanitized;
   }
 
   /**

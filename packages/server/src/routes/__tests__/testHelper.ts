@@ -19,7 +19,14 @@ import {
   HookRepository,
   WritingRepository,
 } from '@inxtone/core/db';
-import { EventBus, StoryBibleService, WritingService } from '@inxtone/core/services';
+import {
+  EventBus,
+  StoryBibleService,
+  WritingService,
+  SearchService,
+  ExportService,
+  IntakeService,
+} from '@inxtone/core/services';
 import { errorHandler } from '../../middleware/errorHandler.js';
 import { registerRoutes } from '../index.js';
 
@@ -27,6 +34,9 @@ export interface TestContext {
   server: FastifyInstance;
   service: StoryBibleService;
   writingService: WritingService;
+  searchService: SearchService;
+  exportService: ExportService;
+  intakeService: IntakeService;
   db: Database;
 }
 
@@ -39,22 +49,26 @@ export async function createTestServer(): Promise<TestContext> {
 
   const eventBus = new EventBus();
   const characterRepo = new CharacterRepository(db);
+  const relationshipRepo = new RelationshipRepository(db);
+  const worldRepo = new WorldRepository(db);
   const locationRepo = new LocationRepository(db);
+  const factionRepo = new FactionRepository(db);
   const arcRepo = new ArcRepository(db);
   const foreshadowingRepo = new ForeshadowingRepository(db);
+  const hookRepo = new HookRepository(db);
   const writingRepo = new WritingRepository(db);
 
   const service = new StoryBibleService({
     db,
     characterRepo,
-    relationshipRepo: new RelationshipRepository(db),
-    worldRepo: new WorldRepository(db),
+    relationshipRepo,
+    worldRepo,
     locationRepo,
-    factionRepo: new FactionRepository(db),
+    factionRepo,
     timelineEventRepo: new TimelineEventRepository(db),
     arcRepo,
     foreshadowingRepo,
-    hookRepo: new HookRepository(db),
+    hookRepo,
     eventBus,
   });
 
@@ -68,10 +82,44 @@ export async function createTestServer(): Promise<TestContext> {
     eventBus,
   });
 
+  const searchService = new SearchService(db);
+
+  const exportService = new ExportService({
+    writingRepo,
+    characterRepo,
+    relationshipRepo,
+    worldRepo,
+    locationRepo,
+    factionRepo,
+    arcRepo,
+    foreshadowingRepo,
+    hookRepo,
+  });
+
+  const intakeService = new IntakeService({
+    db,
+    characterRepo,
+    relationshipRepo,
+    locationRepo,
+    factionRepo,
+    arcRepo,
+    foreshadowingRepo,
+    hookRepo,
+    worldRepo,
+    timelineEventRepo: new TimelineEventRepository(db),
+    eventBus,
+  });
+
   const server = Fastify({ logger: false });
   server.setErrorHandler(errorHandler);
-  await registerRoutes(server, { storyBibleService: service, writingService });
+  await registerRoutes(server, {
+    storyBibleService: service,
+    writingService,
+    searchService,
+    exportService,
+    intakeService,
+  });
   await server.ready();
 
-  return { server, service, writingService, db };
+  return { server, service, writingService, searchService, exportService, intakeService, db };
 }

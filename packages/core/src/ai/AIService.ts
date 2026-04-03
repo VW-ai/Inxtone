@@ -11,8 +11,8 @@
  * - Streaming AI generation responses
  * - Emitting events for generation lifecycle
  *
- * @see Meta/Modules/03_ai_service.md
- * @see Meta/Decisions/ADR-0002-ai-context-injection-strategy.md
+ * @see spec/Modules/03_ai_service.md
+ * @see spec/Decisions/ADR-0002-ai-context-injection-strategy.md
  */
 
 import { randomUUID } from 'node:crypto';
@@ -24,6 +24,7 @@ import type {
   ContextItem,
   BuiltContext,
   AIStreamChunk,
+  ExtractedEntities,
 } from '../types/services.js';
 import type { ChapterId, CharacterId, LocationId } from '../types/entities.js';
 import type { WritingRepository } from '../db/repositories/WritingRepository.js';
@@ -354,6 +355,50 @@ export class AIService implements IAIService {
   }
 
   // ===================================
+  // Entity Extraction
+  // ===================================
+
+  /**
+   * Extract entities (characters, locations) from content using AI.
+   * Non-streaming — calls generateJSON for structured output.
+   */
+  async extractEntities(
+    chapterId: ChapterId,
+    content: string,
+    options?: AIGenerationOptions
+  ): Promise<ExtractedEntities> {
+    // Build known entity lists for matching
+    const allCharacters = this.deps.characterRepo.findAll();
+    const allLocations = this.deps.locationRepo.findAll();
+
+    const knownCharacters =
+      allCharacters.map((c) => `- ${c.name} (ID: ${c.id})`).join('\n') || '(none)';
+    const knownLocations =
+      allLocations.map((l) => `- ${l.name} (ID: ${l.id})`).join('\n') || '(none)';
+
+    // Build chapter context for grounding
+    const builtContext = this.chapterContextBuilder.build(chapterId);
+    const contextText = builtContext.items
+      .map((item) => `[${item.type}] ${item.content}`)
+      .join('\n\n');
+
+    const prompt = this.promptAssembler.assemble('extract_entities', {
+      context: contextText,
+      content,
+      known_characters: knownCharacters,
+      known_locations: knownLocations,
+    });
+
+    const result = await this.provider.generateJSON<ExtractedEntities>(prompt, options);
+
+    // Validate and normalize response shape
+    return {
+      characters: Array.isArray(result.characters) ? result.characters : [],
+      locations: Array.isArray(result.locations) ? result.locations : [],
+    };
+  }
+
+  // ===================================
   // Provider Management
   // ===================================
 
@@ -440,13 +485,17 @@ export class AIService implements IAIService {
 
                 // Create ai_backup version before generation (#22)
                 if (chapter.content) {
-                  self.deps.writingRepo.createVersion({
-                    entityType: 'chapter',
-                    entityId: String(chapterId),
-                    content: { content: chapter.content, wordCount: chapter.wordCount },
-                    changeSummary: 'AI generation backup',
-                    source: 'ai_backup',
-                  });
+                  try {
+                    self.deps.writingRepo.createVersion({
+                      entityType: 'chapter',
+                      entityId: String(chapterId),
+                      content: { content: chapter.content, wordCount: chapter.wordCount },
+                      changeSummary: 'AI generation backup',
+                      source: 'ai_backup',
+                    });
+                  } catch {
+                    // ai_backup failure should not abort generation
+                  }
                 }
 
                 const context = self.chapterContextBuilder.build(chapterId);
